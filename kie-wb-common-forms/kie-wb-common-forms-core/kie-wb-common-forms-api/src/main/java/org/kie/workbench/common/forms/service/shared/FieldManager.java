@@ -38,11 +38,10 @@ public interface FieldManager {
 
     Collection<String> getCompatibleFields(FieldDefinition fieldDefinition);
 
+    Collection<String> getCompatibleTypes(FieldDefinition fieldDefinition);
+
     FieldDefinition getFieldFromProvider(String typeCode,
                                          TypeInfo typeInfo);
-
-    FieldDefinition getFieldFromProviderWithType(String typeCode,
-                                                 TypeInfo typeInfo);
 
     FieldDefinition getDefinitionByFieldType(Class<? extends FieldType> fieldType,
                                              TypeInfo typeInfo);

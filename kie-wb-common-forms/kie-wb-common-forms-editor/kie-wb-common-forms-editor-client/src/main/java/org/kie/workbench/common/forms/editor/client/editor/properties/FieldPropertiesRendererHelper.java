@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.kie.workbench.common.forms.editor.client.editor.properties;
 
-import java.util.Collection;
 import java.util.List;
 
 import org.kie.workbench.common.forms.dynamic.service.shared.FormRenderingContext;
@@ -29,7 +28,7 @@ public interface FieldPropertiesRendererHelper {
 
     FieldDefinition getCurrentField();
 
-    List<String> getAvailableModelFields();
+    List<String> getAvailableModelFields(FieldDefinition fieldDefinition);
 
     List<String> getCompatibleFieldTypes(FieldDefinition fieldDefinition);
 

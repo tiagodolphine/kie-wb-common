@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,8 +103,8 @@ public class EditorFieldLayoutComponent extends FieldLayoutComponent implements 
             }
 
             @Override
-            public List<String> getAvailableModelFields() {
-                return editorHelper.getCompatibleModelFields(field);
+            public List<String> getAvailableModelFields(final FieldDefinition fieldDefinition) {
+                return editorHelper.getCompatibleModelFields(fieldDefinition);
             }
 
             @Override
@@ -129,7 +129,7 @@ public class EditorFieldLayoutComponent extends FieldLayoutComponent implements 
             @Override
             public FieldDefinition onFieldTypeChange(FieldDefinition field,
                                                      String newType) {
-                FieldDefinition fieldCopy = fieldManager.getDefinitionByFieldTypeName(newType);
+                FieldDefinition fieldCopy = fieldManager.getFieldFromProvider(newType, field.getFieldTypeInfo());
                 fieldCopy.copyFrom(field);
                 fieldCopy.setId(field.getId());
                 fieldCopy.setName(field.getName());

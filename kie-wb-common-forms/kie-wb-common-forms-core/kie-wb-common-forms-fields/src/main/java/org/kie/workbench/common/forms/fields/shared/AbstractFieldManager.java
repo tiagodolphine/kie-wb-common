@@ -195,6 +195,20 @@ public abstract class AbstractFieldManager implements FieldManager {
     }
 
     @Override
+    public Collection<String> getCompatibleTypes(FieldDefinition fieldDefinition) {
+        FieldProvider provider = providersByFieldCode.get(fieldDefinition.getFieldType().getTypeName());
+
+        if(provider == null) {
+            throw new IllegalArgumentException("Unexpected field type '" + fieldDefinition.getFieldType().getTypeName() + "'");
+        }
+
+        if (provider instanceof BasicTypeFieldProvider) {
+            return Arrays.asList(((BasicTypeFieldProvider)provider).getSupportedTypes());
+        }
+        return Arrays.asList(fieldDefinition.getStandaloneClassName());
+    }
+
+    @Override
     public FieldDefinition getFieldFromProvider(String typeCode,
                                                 TypeInfo typeInfo) {
         Assert.notNull("TypeInfo cannot be null",
@@ -218,33 +232,6 @@ public abstract class AbstractFieldManager implements FieldManager {
 
         if (provider != null) {
             return provider.getFieldByType(typeInfo);
-        }
-
-        return null;
-    }
-
-    @Override
-    public FieldDefinition getFieldFromProviderWithType(String typeCode,
-                                                        TypeInfo typeInfo) {
-        Assert.notNull("TypeCode cannot be null",
-                       typeCode);
-        Assert.notNull("TypeInfo cannot be null",
-                       typeInfo);
-
-        FieldProvider provider = entityTypeFieldProvider.get(typeCode);
-
-        if (provider == null) {
-            provider = multipleEntityTypeFieldProvider.get(typeCode);
-        }
-
-        if (provider != null) {
-            return provider.getFieldByType(typeInfo);
-        }
-
-        for (BasicTypeFieldProvider basicProvider : basicProviders) {
-            if (basicProvider.getFieldTypeName().equals(typeCode)) {
-                return basicProvider.createFieldByType(typeInfo);
-            }
         }
 
         return null;
