@@ -23,7 +23,6 @@ import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
-import com.google.gwt.dom.client.Style;
 import com.google.gwt.logging.client.LogConfiguration;
 import com.google.gwt.user.client.ui.IsWidget;
 import org.kie.workbench.common.dmn.api.qualifiers.DMNEditor;
@@ -296,9 +295,7 @@ public class SessionDiagramEditorScreen {
                       session,
                       new ScreenPresenterCallback(callback));
         expressionEditor.init(presenter);
-        final com.google.gwt.dom.client.Element palette = presenter.getView().getPaletteWidget().asWidget().getElement();
-        palette.getStyle().setVisibility(Style.Visibility.VISIBLE);
-        palette.getStyle().setDisplay(Style.Display.INITIAL);
+        presenter.getPalette().setVisible(false);
     }
 
     @OnOpen
@@ -331,6 +328,7 @@ public class SessionDiagramEditorScreen {
     }
 
     private void resume() {
+        presenter.getPalette().setVisible(true);
         if (null != getSession()) {
             sessionManager.resume(getSession());
         }
