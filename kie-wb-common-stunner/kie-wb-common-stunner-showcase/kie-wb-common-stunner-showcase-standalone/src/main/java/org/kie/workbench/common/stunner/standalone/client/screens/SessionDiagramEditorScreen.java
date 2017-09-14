@@ -239,16 +239,8 @@ public class SessionDiagramEditorScreen {
                                                  final Metadata metadata = diagram.getMetadata();
                                                  metadata.setShapeSetId(shapeSetId);
                                                  metadata.setTitle(title);
-                                                 final AbstractClientFullSession session = newSession(diagram);
-                                                 presenter = sessionPresenterFactory.newPresenterEditor();
-                                                 screenPanelView.setWidget(presenter.getView());
-                                                 presenter
-                                                         .withToolbar(true)
-                                                         .withPalette(true)
-                                                         .displayNotifications(type -> true)
-                                                         .open(diagram,
-                                                               session,
-                                                               new ScreenPresenterCallback(callback));
+                                                 openDiagram(diagram,
+                                                             callback);
                                              }
 
                                              @Override
@@ -257,6 +249,21 @@ public class SessionDiagramEditorScreen {
                                                  callback.execute();
                                              }
                                          });
+    }
+
+    private void openDiagram(Diagram diagram,
+                             Command callback) {
+        final AbstractClientFullSession session = newSession(diagram);
+        presenter = sessionPresenterFactory.newPresenterEditor();
+        screenPanelView.setWidget(presenter.getView());
+        presenter
+                .withToolbar(true)
+                .withPalette(true)
+                .displayNotifications(type -> true)
+                .open(diagram,
+                      session,
+                      new ScreenPresenterCallback(callback));
+        presenter.getPalette().setVisible(false);
     }
 
     private Metadata buildMetadata(final String defSetId,
@@ -276,16 +283,8 @@ public class SessionDiagramEditorScreen {
                                   new ServiceCallback<Diagram>() {
                                       @Override
                                       public void onSuccess(final Diagram diagram) {
-                                          final AbstractClientFullSession session = newSession(diagram);
-                                          presenter = sessionPresenterFactory.newPresenterEditor();
-                                          screenPanelView.setWidget(presenter.getView());
-                                          presenter
-                                                  .withToolbar(true)
-                                                  .withPalette(true)
-                                                  .displayNotifications(type -> true)
-                                                  .open(diagram,
-                                                        session,
-                                                        new ScreenPresenterCallback(callback));
+                                          openDiagram(diagram,
+                                                      callback);
                                       }
 
                                       @Override
@@ -333,6 +332,7 @@ public class SessionDiagramEditorScreen {
     private void resume() {
         if (null != getSession()) {
             sessionManager.resume(getSession());
+            presenter.getPalette().setVisible(true);
         }
     }
 
