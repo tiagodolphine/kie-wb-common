@@ -60,6 +60,7 @@ public class EditorToolbar extends AbstractToolbar<AbstractClientFullSession> {
         addCommand(commandFactory.newExportToPngToolbarCommand());
         addCommand(commandFactory.newExportToJpgToolbarCommand());
         addCommand(commandFactory.newExportToPdfToolbarCommand());
+        addCommand(commandFactory.newCopyCommand());
     }
 
     @Override

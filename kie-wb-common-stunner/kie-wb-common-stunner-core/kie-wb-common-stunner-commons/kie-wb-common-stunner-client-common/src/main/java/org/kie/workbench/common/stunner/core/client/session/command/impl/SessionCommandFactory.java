@@ -35,9 +35,11 @@ public class SessionCommandFactory {
     private final ManagedInstance<ExportToPngSessionCommand> exportImagePNGSessionCommand;
     private final ManagedInstance<ExportToJpgSessionCommand> exportImageJPGSessionCommand;
     private final ManagedInstance<ExportToPdfSessionCommand> exportPDFSessionCommand;
+    private final ManagedInstance<CopyCutPasteSelectionSessionCommand> copySelectionSessionCommand;
 
     protected SessionCommandFactory() {
         this(null,
+             null,
              null,
              null,
              null,
@@ -61,7 +63,8 @@ public class SessionCommandFactory {
                                  final ManagedInstance<ValidateSessionCommand> validateCommand,
                                  final ManagedInstance<ExportToPngSessionCommand> exportImageSessionCommand,
                                  final ManagedInstance<ExportToJpgSessionCommand> exportImageJPGSessionCommand,
-                                 final ManagedInstance<ExportToPdfSessionCommand> exportPDFSessionCommand) {
+                                 final ManagedInstance<ExportToPdfSessionCommand> exportPDFSessionCommand,
+                                 final ManagedInstance<CopyCutPasteSelectionSessionCommand> copySelectionSessionCommand) {
         this.clearStatesCommand = clearStatesCommand;
         this.visitGraphCommand = visitGraphCommand;
         this.switchGridCommand = switchGridCommand;
@@ -73,6 +76,7 @@ public class SessionCommandFactory {
         this.exportImagePNGSessionCommand = exportImageSessionCommand;
         this.exportImageJPGSessionCommand = exportImageJPGSessionCommand;
         this.exportPDFSessionCommand = exportPDFSessionCommand;
+        this.copySelectionSessionCommand = copySelectionSessionCommand;
     }
 
     public ClearStatesSessionCommand newClearStatesCommand() {
@@ -117,5 +121,9 @@ public class SessionCommandFactory {
 
     public ExportToPdfSessionCommand newExportToPdfSessionCommand() {
         return exportPDFSessionCommand.get();
+    }
+
+    public CopyCutPasteSelectionSessionCommand newCopySelectionSessionCommand() {
+        return copySelectionSessionCommand.get();
     }
 }
