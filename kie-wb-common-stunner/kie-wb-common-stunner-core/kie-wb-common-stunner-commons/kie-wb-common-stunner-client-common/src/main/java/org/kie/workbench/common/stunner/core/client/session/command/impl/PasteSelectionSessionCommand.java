@@ -16,29 +16,24 @@
 
 package org.kie.workbench.common.stunner.core.client.session.command.impl;
 
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.logging.client.LogConfiguration;
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
-import org.kie.workbench.common.stunner.core.client.canvas.controls.select.SelectionControl;
+import org.kie.workbench.common.stunner.core.client.canvas.controls.clipboard.ClipboardControl;
 import org.kie.workbench.common.stunner.core.client.command.CanvasCommandFactory;
 import org.kie.workbench.common.stunner.core.client.command.CanvasViolation;
 import org.kie.workbench.common.stunner.core.client.command.SessionCommandManager;
 import org.kie.workbench.common.stunner.core.client.event.keyboard.KeyboardEvent.Key;
-import org.kie.workbench.common.stunner.core.client.service.ClientRuntimeError;
 import org.kie.workbench.common.stunner.core.client.session.ClientFullSession;
 import org.kie.workbench.common.stunner.core.client.session.Session;
 import org.kie.workbench.common.stunner.core.client.session.command.AbstractClientSessionCommand;
 import org.kie.workbench.common.stunner.core.command.CommandResult;
 import org.kie.workbench.common.stunner.core.command.impl.CompositeCommandImpl.CompositeCommandBuilder;
-import org.kie.workbench.common.stunner.core.command.util.CommandUtils;
 import org.kie.workbench.common.stunner.core.graph.Edge;
 import org.kie.workbench.common.stunner.core.graph.Element;
 import org.kie.workbench.common.stunner.core.graph.Node;
@@ -48,7 +43,6 @@ import org.kie.workbench.common.stunner.core.graph.content.view.View;
 
 import static org.kie.soup.commons.validation.PortablePreconditions.checkNotNull;
 import static org.kie.workbench.common.stunner.core.client.canvas.controls.keyboard.KeysMatcher.doKeysMatch;
-import static org.kie.workbench.common.stunner.core.client.event.keyboard.KeyboardEvent.Key.C;
 import static org.kie.workbench.common.stunner.core.client.event.keyboard.KeyboardEvent.Key.CONTROL;
 import static org.kie.workbench.common.stunner.core.client.event.keyboard.KeyboardEvent.Key.V;
 
@@ -63,20 +57,22 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
 
     private final SessionCommandManager<AbstractCanvasHandler> sessionCommandManager;
     private final CanvasCommandFactory<AbstractCanvasHandler> canvasCommandFactory;
-    private final Collection<String> elements;
+    private final ClipboardControl<Element> clipboardControl;
 
     protected PasteSelectionSessionCommand() {
         this(null,
+             null,
              null);
     }
 
     @Inject
     public PasteSelectionSessionCommand(final @Session SessionCommandManager<AbstractCanvasHandler> sessionCommandManager,
-                                        final CanvasCommandFactory<AbstractCanvasHandler> canvasCommandFactory) {
+                                        final CanvasCommandFactory<AbstractCanvasHandler> canvasCommandFactory,
+                                        final ClipboardControl<Element> clipboardControl) {
         super(true);
         this.sessionCommandManager = sessionCommandManager;
         this.canvasCommandFactory = canvasCommandFactory;
-        this.elements = new LinkedHashSet<>();
+        this.clipboardControl = clipboardControl;
 
         GWT.log("PasteSelectionSessionCommand");
     }
@@ -92,21 +88,17 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
         checkNotNull("callback",
                      callback);
 
-        CompositeCommandBuilder<AbstractCanvasHandler, CanvasViolation> commandBuilder = new CompositeCommandBuilder<>();
-        final AbstractCanvasHandler canvasHandler = (AbstractCanvasHandler) getSession().getCanvasHandler();
-
-        if (null != getSession().getSelectionControl()) {
-
-            final SelectionControl<AbstractCanvasHandler, Element> selectionControl = getSession().getSelectionControl();
-            final String canvasRootUUID = canvasHandler.getDiagram().getMetadata().getCanvasRootUUID();
-
-            selectionControl.getSelectedItems().stream()
-                    .map(this::getElement).map(Element::asNode)
-                    .map(node -> (Node<View<?>, Edge>) node)
-                    .forEach(node -> commandBuilder.addCommand(canvasCommandFactory.cloneNode(node, canvasRootUUID, calculateNewLocation(node))));
+        if (clipboardControl.hasElements()) {
+            final CompositeCommandBuilder<AbstractCanvasHandler, CanvasViolation> commandBuilder = new CompositeCommandBuilder<>();
+            final String canvasRootUUID = getCanvasHandler().getDiagram().getMetadata().getCanvasRootUUID();
+            commandBuilder.addCommands(clipboardControl.getElements().stream()
+                                               .map(Element::asNode)
+                                               .map(node -> (Node<View<?>, Edge>) node)
+                                               .map(node -> canvasCommandFactory.cloneNode(node, canvasRootUUID, calculateNewLocation(node)))
+                                               .collect(Collectors.toList()));
 
             // Execute the command.
-            final CommandResult<CanvasViolation> result = sessionCommandManager.execute(canvasHandler, commandBuilder.build());
+            final CommandResult<CanvasViolation> result = sessionCommandManager.execute(getCanvasHandler(), commandBuilder.build());
 
             //Send feedback.
             setCallback(callback, result);
@@ -123,43 +115,12 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
 
     void onKeyDownEvent(final Key... keys) {
         handleCtrlV(keys);
-        handleCtrlC(keys);
-    }
-
-    private void handleCtrlC(Key[] keys) {
-        if (doKeysMatch(keys, CONTROL, C)) {
-            GWT.log("CTRL + C");
-        }
     }
 
     private void handleCtrlV(Key[] keys) {
         if (doKeysMatch(keys, CONTROL, V)) {
             GWT.log("CTRL + V");
-            this.execute(newDefaultCallback());
-        }
-    }
-
-    private Callback<ClientRuntimeError> newDefaultCallback() {
-        return new Callback<ClientRuntimeError>() {
-            @Override
-            public void onSuccess() {
-                // Nothing to do.
-            }
-
-            @Override
-            public void onError(final ClientRuntimeError error) {
-                LOGGER.log(Level.SEVERE,
-                           "Error while trying to delete selected items. Message=[" + error.toString() + "]",
-                           error.getThrowable());
-            }
-        };
-    }
-
-    private void log(final Level level,
-                     final String message) {
-        if (LogConfiguration.loggingIsEnabled()) {
-            LOGGER.log(level,
-                       message);
+            this.execute(newDefaultCallback("Error while trying to paste selected items. Message="));
         }
     }
 }

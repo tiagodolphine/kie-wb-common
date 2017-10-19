@@ -22,12 +22,13 @@ import org.kie.workbench.common.stunner.core.graph.Element;
 
 public interface ClipboardControl<E extends Element> {
 
-    ClipboardControl<E> add(final E item);
+    ClipboardControl<E> add(final E... item);
 
-    ClipboardControl<E> remove(final E item);
+    ClipboardControl<E> remove(final E... item);
 
-    Collection<String> getElements();
+    Collection<E> getElements();
 
     ClipboardControl<E> clear();
 
+    boolean hasElements();
 }

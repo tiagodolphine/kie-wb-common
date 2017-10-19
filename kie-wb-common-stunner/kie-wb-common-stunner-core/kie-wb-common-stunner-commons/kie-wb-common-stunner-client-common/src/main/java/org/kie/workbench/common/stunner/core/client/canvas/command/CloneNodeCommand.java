@@ -22,11 +22,15 @@ import java.util.logging.Logger;
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
 import org.kie.workbench.common.stunner.core.client.command.CanvasViolation;
 import org.kie.workbench.common.stunner.core.command.Command;
+import org.kie.workbench.common.stunner.core.command.CommandResult;
 import org.kie.workbench.common.stunner.core.command.CompositeCommand;
 import org.kie.workbench.common.stunner.core.command.impl.CompositeCommandImpl;
+import org.kie.workbench.common.stunner.core.command.util.CommandUtils;
+import org.kie.workbench.common.stunner.core.graph.Edge;
 import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.command.GraphCommandExecutionContext;
 import org.kie.workbench.common.stunner.core.graph.command.impl.UpdateElementPositionCommand;
+import org.kie.workbench.common.stunner.core.graph.content.definition.Definition;
 import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
 import org.kie.workbench.common.stunner.core.rule.RuleViolation;
 
@@ -53,18 +57,25 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
     @SuppressWarnings("unchecked")
     protected Command<GraphCommandExecutionContext, RuleViolation> newGraphCommand(final AbstractCanvasHandler context) {
         return new org.kie.workbench.common.stunner.core.graph.command.impl.CloneNodeCommand(candidate, parentUuid, clone -> {
-            //success cloned
+            //success cloned than create apply it to canvas
             command.addCommand(new CloneCanvasNodeCommand(clone, context.getDiagram().getMetadata().getShapeSetId()));
-
             //update position of cloned node
-//            cloneLocation.ifPresent(point -> {
-//                //graph position update
-//                new UpdateElementPositionCommand(context.getGraphIndex().getNode(clone.getUUID()), point.getX(), point.getY()).execute(context.getGraphExecutionContext());
-//
-//                //than update canvas position
-//                command.addCommand(new UpdateCanvasElementPositionCommand(clone));
-//            });
+            cloneLocation.ifPresent(point -> handleClonedNodePosition(context, clone, point));
         });
+    }
+
+    private void handleClonedNodePosition(AbstractCanvasHandler context, Node<Definition, Edge> clone, Point2D point) {
+        //graph position update
+        CommandResult<RuleViolation> result =
+                new UpdateElementPositionCommand(context.getGraphIndex().getNode(clone.getUUID()),
+                                                 point.getX(),
+                                                 point.getY()).execute(context.getGraphExecutionContext());
+        //than update canvas position
+        if (!CommandUtils.isError(result)) {
+            command.addCommand(new UpdateCanvasElementPositionCommand(clone));
+        } else {
+            LOGGER.severe("Error updating position of cloned element " + clone.getUUID());
+        }
     }
 
     @Override

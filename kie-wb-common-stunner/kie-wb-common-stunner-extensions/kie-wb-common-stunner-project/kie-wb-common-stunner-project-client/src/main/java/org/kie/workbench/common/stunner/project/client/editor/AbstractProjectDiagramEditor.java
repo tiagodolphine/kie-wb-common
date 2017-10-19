@@ -40,10 +40,12 @@ import org.kie.workbench.common.stunner.core.client.session.ClientSession;
 import org.kie.workbench.common.stunner.core.client.session.command.ClientSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ClearSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ClearStatesSessionCommand;
+import org.kie.workbench.common.stunner.core.client.session.command.impl.CopySelectionSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.DeleteSelectionSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ExportToJpgSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ExportToPdfSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ExportToPngSessionCommand;
+import org.kie.workbench.common.stunner.core.client.session.command.impl.PasteSelectionSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.RedoSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.SessionCommandFactory;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.SwitchGridSessionCommand;
@@ -120,6 +122,9 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
     private ExportToPngSessionCommand sessionExportImagePNGCommand;
     private ExportToJpgSessionCommand sessionExportImageJPGCommand;
     private ExportToPdfSessionCommand sessionExportPDFCommand;
+    private CopySelectionSessionCommand copySelectionSessionCommand;
+    private PasteSelectionSessionCommand pasteSelectionSessionCommand;
+
     private Event<OnDiagramFocusEvent> onDiagramFocusEvent;
     private Event<OnDiagramLoseFocusEvent> onDiagramLostFocusEvent;
     protected SessionPresenter<AbstractClientFullSession, ?, Diagram> presenter;
@@ -163,6 +168,9 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
         this.sessionExportImagePNGCommand = sessionCommandFactory.newExportToPngSessionCommand();
         this.sessionExportImageJPGCommand = sessionCommandFactory.newExportToJpgSessionCommand();
         this.sessionExportPDFCommand = sessionCommandFactory.newExportToPdfSessionCommand();
+        this.copySelectionSessionCommand = sessionCommandFactory.newCopySelectionCommand();
+        this.pasteSelectionSessionCommand = sessionCommandFactory.newPasteSelectionCommand();
+
         this.onDiagramFocusEvent = onDiagramFocusEvent;
         this.onDiagramLostFocusEvent = onDiagramLostFocusEvent;
     }
@@ -341,6 +349,8 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
         sessionExportImagePNGCommand.listen(() -> exportsItem.setEnabled(sessionExportImagePNGCommand.isEnabled()));
         sessionExportImageJPGCommand.listen(() -> exportsItem.setEnabled(sessionExportImageJPGCommand.isEnabled()));
         sessionExportPDFCommand.listen(() -> exportsItem.setEnabled(sessionExportPDFCommand.isEnabled()));
+        final MenuItem copyItem = menuItemsBuilder.newCopyItem(() -> copySelectionSessionCommand.execute());
+        final MenuItem pasteItem = menuItemsBuilder.newPasteItem(() -> pasteSelectionSessionCommand.execute());
 
         // Build the menu.
         fileMenuBuilder
@@ -353,7 +363,10 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
                 .addNewTopLevelMenu(undoItem)
                 .addNewTopLevelMenu(redoItem)
                 .addNewTopLevelMenu(validateItem)
-                .addNewTopLevelMenu(exportsItem);
+                .addNewTopLevelMenu(exportsItem)
+                .addNewTopLevelMenu(copyItem)
+                .addNewTopLevelMenu(pasteItem);
+
         if (menuItemsBuilder.isDevItemsEnabled()) {
             fileMenuBuilder.addNewTopLevelMenu(menuItemsBuilder.newDevItems());
         }
@@ -517,6 +530,8 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
         this.sessionExportImagePNGCommand.bind(getSession());
         this.sessionExportImageJPGCommand.bind(getSession());
         this.sessionExportPDFCommand.bind(getSession());
+        this.pasteSelectionSessionCommand.bind(getSession());
+        this.copySelectionSessionCommand.bind(getSession());
     }
 
     void unbindCommands() {
@@ -531,6 +546,8 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
         this.sessionExportImagePNGCommand.unbind();
         this.sessionExportImageJPGCommand.unbind();
         this.sessionExportPDFCommand.unbind();
+        this.pasteSelectionSessionCommand.unbind();
+        this.copySelectionSessionCommand.unbind();
     }
 
     private void pauseSession() {

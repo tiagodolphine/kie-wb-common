@@ -21,21 +21,20 @@ import javax.inject.Inject;
 
 import org.gwtbootstrap3.client.ui.constants.IconType;
 import org.kie.workbench.common.stunner.core.client.session.ClientFullSession;
-import org.kie.workbench.common.stunner.core.client.session.command.impl.CopySelectionSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.PasteSelectionSessionCommand;
 
 // TODO: I18n.
 @Dependent
-public class CopyToolbarCommand extends AbstractToolbarCommand<ClientFullSession, CopySelectionSessionCommand> {
+public class PasteToolbarCommand extends AbstractToolbarCommand<ClientFullSession, PasteSelectionSessionCommand> {
 
     @Inject
-    public CopyToolbarCommand(final CopySelectionSessionCommand copySelectionSessionCommand) {
-        super(copySelectionSessionCommand);
+    public PasteToolbarCommand(final PasteSelectionSessionCommand pasteSelectionSessionCommand) {
+        super(pasteSelectionSessionCommand);
     }
 
     @Override
     public IconType getIcon() {
-        return IconType.COPY;
+        return IconType.PASTE;
     }
 
     @Override
@@ -45,7 +44,7 @@ public class CopyToolbarCommand extends AbstractToolbarCommand<ClientFullSession
 
     @Override
     public String getTooltip() {
-        return "Copy";
+        return "Paste";
     }
 
     @Override

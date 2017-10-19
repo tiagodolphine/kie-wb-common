@@ -66,13 +66,12 @@ public class CopySelectionSessionCommand extends AbstractClientSessionCommand<Cl
     @Override
     public <V> void execute(final Callback<V> callback) {
         if (null != getSession().getSelectionControl()) {
-
-            final SelectionControl<AbstractCanvasHandler, Element> selectionControl = getSession().getSelectionControl();
-
             try {
-                selectionControl.getSelectedItems().stream()
-                        .map(this::getElement)
-                        .map(element -> clipboardControl.add(element));
+                final SelectionControl<AbstractCanvasHandler, Element> selectionControl = getSession().getSelectionControl();
+                clipboardControl.add(selectionControl.getSelectedItems()
+                                             .stream()
+                                             .map(this::getElement)
+                                             .toArray(Element[]::new));
                 //do not send feedback
             } catch (Exception e) {
                 callback.onError((V) "Error on copy operation");
@@ -80,12 +79,13 @@ public class CopySelectionSessionCommand extends AbstractClientSessionCommand<Cl
         }
     }
 
-    void onKeyDownEvent(final Key... keys) {
+    protected void onKeyDownEvent(final Key... keys) {
         handleCtrlC(keys);
     }
 
     private void handleCtrlC(Key[] keys) {
         if (doKeysMatch(keys, CONTROL, C)) {
+            this.execute(newDefaultCallback("Error while trying to copy selected items. Message="));
             GWT.log("CTRL + C");
         }
     }

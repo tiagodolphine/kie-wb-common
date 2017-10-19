@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
 import org.kie.workbench.common.stunner.core.client.command.CanvasViolation;
+import org.kie.workbench.common.stunner.core.client.service.ClientRuntimeError;
 import org.kie.workbench.common.stunner.core.client.session.ClientSession;
 import org.kie.workbench.common.stunner.core.command.CommandResult;
 import org.kie.workbench.common.stunner.core.command.util.CommandUtils;
@@ -103,5 +104,21 @@ public abstract class AbstractClientSessionCommand<S extends ClientSession> impl
 
     protected AbstractCanvasHandler getCanvasHandler() {
         return (AbstractCanvasHandler) getSession().getCanvasHandler();
+    }
+
+    protected Callback<ClientRuntimeError> newDefaultCallback(String errorMessage) {
+        return new Callback<ClientRuntimeError>() {
+            @Override
+            public void onSuccess() {
+                // Nothing to do.
+            }
+
+            @Override
+            public void onError(final ClientRuntimeError error) {
+                LOGGER.log(Level.SEVERE,
+                           errorMessage + error.toString(),
+                           error.getThrowable());
+            }
+        };
     }
 }

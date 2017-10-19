@@ -16,32 +16,50 @@
 
 package org.kie.workbench.common.stunner.core.client.canvas.controls.clipboard;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import javax.enterprise.context.Dependent;
+import javax.enterprise.context.ApplicationScoped;
 
 import org.kie.workbench.common.stunner.core.graph.Element;
 
-@Dependent
+@ApplicationScoped
 public class LocalClipboardControl implements ClipboardControl<Element> {
 
-    @Override
-    public ClipboardControl<Element> add(Element item) {
-        return null;
+    private final static Set<Element> elements = new HashSet<>();
+
+    public LocalClipboardControl() {
     }
 
     @Override
-    public ClipboardControl<Element> remove(Element item) {
-        return null;
+    public ClipboardControl<Element> add(Element[] element) {
+        clear();
+        elements.addAll(Arrays.stream(element).collect(Collectors.toSet()));
+        return this;
     }
 
     @Override
-    public Collection<String> getElements() {
-        return null;
+    public ClipboardControl<Element> remove(Element[] element) {
+        elements.removeAll(Arrays.stream(element).collect(Collectors.toSet()));
+        return this;
+    }
+
+    @Override
+    public Collection<Element> getElements() {
+        return elements;
     }
 
     @Override
     public ClipboardControl<Element> clear() {
-        return null;
+        elements.clear();
+        return this;
+    }
+
+    @Override
+    public boolean hasElements() {
+        return !elements.isEmpty();
     }
 }

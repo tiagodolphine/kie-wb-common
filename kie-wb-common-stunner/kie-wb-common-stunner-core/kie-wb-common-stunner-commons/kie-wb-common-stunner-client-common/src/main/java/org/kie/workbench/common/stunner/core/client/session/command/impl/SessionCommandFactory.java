@@ -35,10 +35,12 @@ public class SessionCommandFactory {
     private final ManagedInstance<ExportToPngSessionCommand> exportImagePNGSessionCommand;
     private final ManagedInstance<ExportToJpgSessionCommand> exportImageJPGSessionCommand;
     private final ManagedInstance<ExportToPdfSessionCommand> exportPDFSessionCommand;
-    private final ManagedInstance<PasteSelectionSessionCommand> copySelectionSessionCommand;
+    private final ManagedInstance<CopySelectionSessionCommand> copySelectionSessionCommand;
+    private final ManagedInstance<PasteSelectionSessionCommand> pasteSelectionSessionCommand;
 
     protected SessionCommandFactory() {
         this(null,
+             null,
              null,
              null,
              null,
@@ -64,7 +66,8 @@ public class SessionCommandFactory {
                                  final ManagedInstance<ExportToPngSessionCommand> exportImageSessionCommand,
                                  final ManagedInstance<ExportToJpgSessionCommand> exportImageJPGSessionCommand,
                                  final ManagedInstance<ExportToPdfSessionCommand> exportPDFSessionCommand,
-                                 final ManagedInstance<PasteSelectionSessionCommand> copySelectionSessionCommand) {
+                                 final ManagedInstance<CopySelectionSessionCommand> copySelectionSessionCommand,
+                                 final ManagedInstance<PasteSelectionSessionCommand> pasteSelectionSessionCommand) {
         this.clearStatesCommand = clearStatesCommand;
         this.visitGraphCommand = visitGraphCommand;
         this.switchGridCommand = switchGridCommand;
@@ -77,6 +80,7 @@ public class SessionCommandFactory {
         this.exportImageJPGSessionCommand = exportImageJPGSessionCommand;
         this.exportPDFSessionCommand = exportPDFSessionCommand;
         this.copySelectionSessionCommand = copySelectionSessionCommand;
+        this.pasteSelectionSessionCommand = pasteSelectionSessionCommand;
     }
 
     public ClearStatesSessionCommand newClearStatesCommand() {
@@ -93,6 +97,14 @@ public class SessionCommandFactory {
 
     public ClearSessionCommand newClearCommand() {
         return clearCommand.get();
+    }
+
+    public CopySelectionSessionCommand newCopySelectionCommand() {
+        return copySelectionSessionCommand.get();
+    }
+
+    public PasteSelectionSessionCommand newPasteSelectionCommand() {
+        return pasteSelectionSessionCommand.get();
     }
 
     public DeleteSelectionSessionCommand newDeleteSelectedElementsCommand() {
