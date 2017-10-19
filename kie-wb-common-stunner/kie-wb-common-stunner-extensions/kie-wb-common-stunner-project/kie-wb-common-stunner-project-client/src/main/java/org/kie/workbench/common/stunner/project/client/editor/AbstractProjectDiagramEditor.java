@@ -18,6 +18,8 @@ package org.kie.workbench.common.stunner.project.client.editor;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -111,19 +113,7 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
     private ProjectDiagramEditorMenuItemsBuilder menuItemsBuilder;
     private ProjectMessagesListener projectMessagesListener;
 
-    private ClearStatesSessionCommand sessionClearStatesCommand;
-    private VisitGraphSessionCommand sessionVisitGraphCommand;
-    private SwitchGridSessionCommand sessionSwitchGridCommand;
-    private ClearSessionCommand sessionClearCommand;
-    private DeleteSelectionSessionCommand sessionDeleteSelectionCommand;
-    private UndoSessionCommand sessionUndoCommand;
-    private RedoSessionCommand sessionRedoCommand;
-    private ValidateSessionCommand sessionValidateCommand;
-    private ExportToPngSessionCommand sessionExportImagePNGCommand;
-    private ExportToJpgSessionCommand sessionExportImageJPGCommand;
-    private ExportToPdfSessionCommand sessionExportPDFCommand;
-    private CopySelectionSessionCommand copySelectionSessionCommand;
-    private PasteSelectionSessionCommand pasteSelectionSessionCommand;
+    private Map<Class,ClientSessionCommand> commands;
 
     private Event<OnDiagramFocusEvent> onDiagramFocusEvent;
     private Event<OnDiagramLoseFocusEvent> onDiagramLostFocusEvent;
@@ -156,23 +146,27 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
         this.sessionPresenterFactory = sessionPresenterFactory;
         this.menuItemsBuilder = menuItemsBuilder;
         this.projectMessagesListener = projectMessagesListener;
-
-        this.sessionClearStatesCommand = sessionCommandFactory.newClearStatesCommand();
-        this.sessionVisitGraphCommand = sessionCommandFactory.newVisitGraphCommand();
-        this.sessionSwitchGridCommand = sessionCommandFactory.newSwitchGridCommand();
-        this.sessionClearCommand = sessionCommandFactory.newClearCommand();
-        this.sessionDeleteSelectionCommand = sessionCommandFactory.newDeleteSelectedElementsCommand();
-        this.sessionUndoCommand = sessionCommandFactory.newUndoCommand();
-        this.sessionRedoCommand = sessionCommandFactory.newRedoCommand();
-        this.sessionValidateCommand = sessionCommandFactory.newValidateCommand();
-        this.sessionExportImagePNGCommand = sessionCommandFactory.newExportToPngSessionCommand();
-        this.sessionExportImageJPGCommand = sessionCommandFactory.newExportToJpgSessionCommand();
-        this.sessionExportPDFCommand = sessionCommandFactory.newExportToPdfSessionCommand();
-        this.copySelectionSessionCommand = sessionCommandFactory.newCopySelectionCommand();
-        this.pasteSelectionSessionCommand = sessionCommandFactory.newPasteSelectionCommand();
-
         this.onDiagramFocusEvent = onDiagramFocusEvent;
         this.onDiagramLostFocusEvent = onDiagramLostFocusEvent;
+
+        initializeCommands(sessionCommandFactory);
+    }
+
+    private void initializeCommands(SessionCommandFactory sessionCommandFactory) {
+        this.commands = new HashMap<>();
+        commands.put(ClearStatesSessionCommand.class, sessionCommandFactory.newClearStatesCommand());
+        commands.put(VisitGraphSessionCommand.class, sessionCommandFactory.newVisitGraphCommand());
+        commands.put(SwitchGridSessionCommand.class, sessionCommandFactory.newSwitchGridCommand());
+        commands.put(ClearSessionCommand.class, sessionCommandFactory.newClearCommand());
+        commands.put(DeleteSelectionSessionCommand.class, sessionCommandFactory.newDeleteSelectedElementsCommand());
+        commands.put(UndoSessionCommand.class, sessionCommandFactory.newUndoCommand());
+        commands.put(RedoSessionCommand.class, sessionCommandFactory.newRedoCommand());
+        commands.put(ValidateSessionCommand.class, sessionCommandFactory.newValidateCommand());
+        commands.put(ExportToPngSessionCommand.class, sessionCommandFactory.newExportToPngSessionCommand());
+        commands.put(ExportToJpgSessionCommand.class, sessionCommandFactory.newExportToJpgSessionCommand());
+        commands.put(ExportToPdfSessionCommand.class, sessionCommandFactory.newExportToPdfSessionCommand());
+        commands.put(CopySelectionSessionCommand.class, sessionCommandFactory.newCopySelectionCommand());
+        commands.put(PasteSelectionSessionCommand.class, sessionCommandFactory.newPasteSelectionCommand());
     }
 
     protected abstract int getCanvasWidth();
@@ -271,7 +265,7 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
     @Override
     protected void save() {
         final Command continueSaveOnceValid = () -> super.save();
-        sessionValidateCommand
+        getCommand(ValidateSessionCommand.class)
                 .execute(new ClientSessionCommand.Callback<Collection<DiagramElementViolation<RuleViolation>>>() {
                     @Override
                     public void onSuccess() {
@@ -328,29 +322,29 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
     protected void makeMenuBar() {
         // TODO: fix - menu items not getting disabled/enabled?
         final MenuItem clearItem = menuItemsBuilder.newClearItem(AbstractProjectDiagramEditor.this::menu_clear);
-        sessionClearCommand.listen(() -> clearItem.setEnabled(sessionClearCommand.isEnabled()));
+        getCommand(ClearSessionCommand.class).listen(() -> clearItem.setEnabled(getCommand(ClearSessionCommand.class).isEnabled()));
         final MenuItem clearStatesItem = menuItemsBuilder.newClearSelectionItem(AbstractProjectDiagramEditor.this::menu_clearStates);
-        sessionClearStatesCommand.listen(() -> clearStatesItem.setEnabled(sessionClearStatesCommand.isEnabled()));
+        getCommand(ClearStatesSessionCommand.class).listen(() -> clearStatesItem.setEnabled(getCommand(ClearStatesSessionCommand.class).isEnabled()));
         final MenuItem visitGraphItem = menuItemsBuilder.newVisitGraphItem(AbstractProjectDiagramEditor.this::menu_visitGraph);
-        sessionVisitGraphCommand.listen(() -> visitGraphItem.setEnabled(sessionVisitGraphCommand.isEnabled()));
+        getCommand(VisitGraphSessionCommand.class).listen(() -> visitGraphItem.setEnabled(getCommand(VisitGraphSessionCommand.class).isEnabled()));
         final MenuItem switchGridItem = menuItemsBuilder.newSwitchGridItem(AbstractProjectDiagramEditor.this::menu_switchGrid);
-        sessionSwitchGridCommand.listen(() -> switchGridItem.setEnabled(sessionSwitchGridCommand.isEnabled()));
+        getCommand(SwitchGridSessionCommand.class).listen(() -> switchGridItem.setEnabled(getCommand(SwitchGridSessionCommand.class).isEnabled()));
         final MenuItem deleteSelectionItem = menuItemsBuilder.newDeleteSelectionItem(AbstractProjectDiagramEditor.this::menu_deleteSelected);
-        sessionDeleteSelectionCommand.listen(() -> deleteSelectionItem.setEnabled(sessionDeleteSelectionCommand.isEnabled()));
+        getCommand(DeleteSelectionSessionCommand.class).listen(() -> deleteSelectionItem.setEnabled(getCommand(DeleteSelectionSessionCommand.class).isEnabled()));
         final MenuItem undoItem = menuItemsBuilder.newUndoItem(AbstractProjectDiagramEditor.this::menu_undo);
-        sessionUndoCommand.listen(() -> undoItem.setEnabled(sessionUndoCommand.isEnabled()));
+        getCommand(UndoSessionCommand.class).listen(() -> undoItem.setEnabled(getCommand(UndoSessionCommand.class).isEnabled()));
         final MenuItem redoItem = menuItemsBuilder.newRedoItem(AbstractProjectDiagramEditor.this::menu_redo);
-        sessionRedoCommand.listen(() -> redoItem.setEnabled(sessionRedoCommand.isEnabled()));
+        getCommand(RedoSessionCommand.class).listen(() -> redoItem.setEnabled(getCommand(RedoSessionCommand.class).isEnabled()));
         final MenuItem validateItem = menuItemsBuilder.newValidateItem(AbstractProjectDiagramEditor.this::menu_validate);
-        sessionValidateCommand.listen(() -> validateItem.setEnabled(sessionValidateCommand.isEnabled()));
+        getCommand(ValidateSessionCommand.class).listen(() -> validateItem.setEnabled(getCommand(ValidateSessionCommand.class).isEnabled()));
         final MenuItem exportsItem = menuItemsBuilder.newExportsItem(AbstractProjectDiagramEditor.this::export_imagePNG,
                                                                      AbstractProjectDiagramEditor.this::export_imageJPG,
                                                                      AbstractProjectDiagramEditor.this::export_imagePDF);
-        sessionExportImagePNGCommand.listen(() -> exportsItem.setEnabled(sessionExportImagePNGCommand.isEnabled()));
-        sessionExportImageJPGCommand.listen(() -> exportsItem.setEnabled(sessionExportImageJPGCommand.isEnabled()));
-        sessionExportPDFCommand.listen(() -> exportsItem.setEnabled(sessionExportPDFCommand.isEnabled()));
-        final MenuItem copyItem = menuItemsBuilder.newCopyItem(() -> copySelectionSessionCommand.execute());
-        final MenuItem pasteItem = menuItemsBuilder.newPasteItem(() -> pasteSelectionSessionCommand.execute());
+        getCommand(ExportToPngSessionCommand.class).listen(() -> exportsItem.setEnabled(getCommand(ExportToPngSessionCommand.class).isEnabled()));
+        getCommand(ExportToJpgSessionCommand.class).listen(() -> exportsItem.setEnabled(getCommand(ExportToJpgSessionCommand.class).isEnabled()));
+        getCommand(ExportToPdfSessionCommand.class).listen(() -> exportsItem.setEnabled(getCommand(ExportToPdfSessionCommand.class).isEnabled()));
+        final MenuItem copyItem = menuItemsBuilder.newCopyItem(() -> getCommand(CopySelectionSessionCommand.class).execute());
+        final MenuItem pasteItem = menuItemsBuilder.newPasteItem(() -> getCommand(PasteSelectionSessionCommand.class).execute());
 
         // Build the menu.
         fileMenuBuilder
@@ -385,10 +379,14 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
         fileMenuBuilder
                 .addNewTopLevelMenu(versionRecordManager.buildMenu());
     }
+    
+    private <T> T getCommand(Class<T> key){
+        return (T) commands.get(key);
+    }
 
     private void validate(final Command callback) {
         showLoadingViews();
-        sessionValidateCommand.execute(new ClientSessionCommand.Callback<Collection<DiagramElementViolation<RuleViolation>>>() {
+        getCommand(ValidateSessionCommand.class).execute(new ClientSessionCommand.Callback<Collection<DiagramElementViolation<RuleViolation>>>() {
             @Override
             public void onSuccess() {
                 callback.execute();
@@ -402,43 +400,43 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
     }
 
     private void menu_clear() {
-        sessionClearCommand.execute();
+        getCommand(ClearSessionCommand.class).execute();
     }
 
     private void menu_clearStates() {
-        sessionClearStatesCommand.execute();
+        getCommand(ClearStatesSessionCommand.class).execute();
     }
 
     private void menu_visitGraph() {
-        sessionVisitGraphCommand.execute();
+        getCommand(VisitGraphSessionCommand.class).execute();
     }
 
     private void menu_switchGrid() {
-        sessionSwitchGridCommand.execute();
+        getCommand(SwitchGridSessionCommand.class).execute();
     }
 
     private void menu_deleteSelected() {
-        sessionDeleteSelectionCommand.execute();
+        getCommand(DeleteSelectionSessionCommand.class).execute();
     }
 
     private void menu_undo() {
-        sessionUndoCommand.execute();
+        getCommand(UndoSessionCommand.class).execute();
     }
 
     private void menu_redo() {
-        sessionRedoCommand.execute();
+        getCommand(RedoSessionCommand.class).execute();
     }
 
     private void export_imagePNG() {
-        sessionExportImagePNGCommand.execute();
+        getCommand(ExportToPngSessionCommand.class).execute();
     }
 
     private void export_imageJPG() {
-        sessionExportImageJPGCommand.execute();
+        getCommand(ExportToJpgSessionCommand.class).execute();
     }
 
     private void export_imagePDF() {
-        sessionExportPDFCommand.execute();
+        getCommand(ExportToPdfSessionCommand.class).execute();
     }
 
     private void menu_validate() {
@@ -519,35 +517,11 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
     }
 
     void bindCommands() {
-        this.sessionClearStatesCommand.bind(getSession());
-        this.sessionVisitGraphCommand.bind(getSession());
-        this.sessionSwitchGridCommand.bind(getSession());
-        this.sessionClearCommand.bind(getSession());
-        this.sessionDeleteSelectionCommand.bind(getSession());
-        this.sessionUndoCommand.bind(getSession());
-        this.sessionRedoCommand.bind(getSession());
-        this.sessionValidateCommand.bind(getSession());
-        this.sessionExportImagePNGCommand.bind(getSession());
-        this.sessionExportImageJPGCommand.bind(getSession());
-        this.sessionExportPDFCommand.bind(getSession());
-        this.pasteSelectionSessionCommand.bind(getSession());
-        this.copySelectionSessionCommand.bind(getSession());
+        commands.values().stream().forEach(command -> command.bind(getSession()));        
     }
 
     void unbindCommands() {
-        this.sessionClearStatesCommand.unbind();
-        this.sessionVisitGraphCommand.unbind();
-        this.sessionSwitchGridCommand.unbind();
-        this.sessionClearCommand.unbind();
-        this.sessionDeleteSelectionCommand.unbind();
-        this.sessionUndoCommand.unbind();
-        this.sessionRedoCommand.unbind();
-        this.sessionValidateCommand.unbind();
-        this.sessionExportImagePNGCommand.unbind();
-        this.sessionExportImageJPGCommand.unbind();
-        this.sessionExportPDFCommand.unbind();
-        this.pasteSelectionSessionCommand.unbind();
-        this.copySelectionSessionCommand.unbind();
+        commands.values().stream().forEach(ClientSessionCommand::unbind);        
     }
 
     private void pauseSession() {
