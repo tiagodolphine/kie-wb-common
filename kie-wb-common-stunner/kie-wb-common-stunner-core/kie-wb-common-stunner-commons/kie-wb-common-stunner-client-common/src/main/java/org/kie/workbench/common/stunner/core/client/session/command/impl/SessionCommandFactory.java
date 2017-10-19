@@ -35,7 +35,7 @@ public class SessionCommandFactory {
     private final ManagedInstance<ExportToPngSessionCommand> exportImagePNGSessionCommand;
     private final ManagedInstance<ExportToJpgSessionCommand> exportImageJPGSessionCommand;
     private final ManagedInstance<ExportToPdfSessionCommand> exportPDFSessionCommand;
-    private final ManagedInstance<CopyCutPasteSelectionSessionCommand> copySelectionSessionCommand;
+    private final ManagedInstance<PasteSelectionSessionCommand> copySelectionSessionCommand;
 
     protected SessionCommandFactory() {
         this(null,
@@ -64,7 +64,7 @@ public class SessionCommandFactory {
                                  final ManagedInstance<ExportToPngSessionCommand> exportImageSessionCommand,
                                  final ManagedInstance<ExportToJpgSessionCommand> exportImageJPGSessionCommand,
                                  final ManagedInstance<ExportToPdfSessionCommand> exportPDFSessionCommand,
-                                 final ManagedInstance<CopyCutPasteSelectionSessionCommand> copySelectionSessionCommand) {
+                                 final ManagedInstance<PasteSelectionSessionCommand> copySelectionSessionCommand) {
         this.clearStatesCommand = clearStatesCommand;
         this.visitGraphCommand = visitGraphCommand;
         this.switchGridCommand = switchGridCommand;
@@ -121,9 +121,5 @@ public class SessionCommandFactory {
 
     public ExportToPdfSessionCommand newExportToPdfSessionCommand() {
         return exportPDFSessionCommand.get();
-    }
-
-    public CopyCutPasteSelectionSessionCommand newCopySelectionSessionCommand() {
-        return copySelectionSessionCommand.get();
     }
 }

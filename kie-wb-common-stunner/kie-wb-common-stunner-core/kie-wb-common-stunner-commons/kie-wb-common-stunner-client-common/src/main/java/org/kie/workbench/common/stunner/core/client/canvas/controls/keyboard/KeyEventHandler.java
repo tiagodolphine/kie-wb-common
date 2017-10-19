@@ -110,7 +110,7 @@ public class KeyEventHandler {
         if (!shortcutCallbacks.isEmpty() && null != _keys) {
             shortcutCallbacks.stream().forEach(s -> s.onKeyShortcut(_keys));
         }
-        reset();
+        //reset();
     }
 
     void reset() {

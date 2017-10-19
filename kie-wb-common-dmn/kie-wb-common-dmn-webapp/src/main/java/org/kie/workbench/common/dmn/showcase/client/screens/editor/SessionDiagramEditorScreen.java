@@ -191,7 +191,7 @@ public class SessionDiagramEditorScreen {
                     @Override
                     public void onSuccess() {
                         log(Level.INFO,
-                            "Validation success.");
+                            "Validation cloned.");
                         save.execute();
                     }
 

@@ -14,33 +14,20 @@
  * limitations under the License.
  */
 
-package org.kie.workbench.common.stunner.core.client.event.keyboard;
+package org.kie.workbench.common.stunner.core.client.canvas.controls.clipboard;
 
-public interface KeyboardEvent {
+import java.util.Collection;
 
-    enum Key {
-        ESC(27),
-        CONTROL(17),
-        SHIFT(16),
-        DELETE(46),
-        ARROW_UP(24),
-        ARROW_DOWN(25),
-        ARROW_LEFT(27),
-        ARROW_RIGHT(26),
-        C(67),
-        V(86),
-        Z(90);
+import org.kie.workbench.common.stunner.core.graph.Element;
 
-        private final int unicharCode;
+public interface ClipboardControl<E extends Element> {
 
-        Key(final int unicharCode) {
-            this.unicharCode = unicharCode;
-        }
+    ClipboardControl<E> add(final E item);
 
-        public int getUnicharCode() {
-            return unicharCode;
-        }
-    }
+    ClipboardControl<E> remove(final E item);
 
-    Key getKey();
+    Collection<String> getElements();
+
+    ClipboardControl<E> clear();
+
 }

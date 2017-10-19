@@ -16,8 +16,6 @@
 
 package org.kie.workbench.common.stunner.core.client.canvas.command;
 
-import java.util.function.Consumer;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
@@ -31,6 +29,7 @@ import org.kie.workbench.common.stunner.core.graph.Element;
 import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.content.definition.Definition;
 import org.kie.workbench.common.stunner.core.graph.content.view.Connection;
+import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
 import org.kie.workbench.common.stunner.core.graph.content.view.View;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.ChildrenTraverseProcessor;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.ViewTraverseProcessor;
@@ -200,8 +199,8 @@ public class DefaultCanvasCommandFactory implements CanvasCommandFactory<Abstrac
     }
 
     @Override
-    public CanvasCommand<AbstractCanvasHandler> cloneNode(Node candidate, Consumer<Node> clone) {
-        return new CloneNodeCommand(candidate, clone);
+    public CanvasCommand<AbstractCanvasHandler> cloneNode(Node candidate, String parentUuid, Point2D cloneLocation) {
+        return new CloneNodeCommand(candidate, parentUuid, cloneLocation);
     }
 
     protected ChildrenTraverseProcessor newChildrenTraverseProcessor() {

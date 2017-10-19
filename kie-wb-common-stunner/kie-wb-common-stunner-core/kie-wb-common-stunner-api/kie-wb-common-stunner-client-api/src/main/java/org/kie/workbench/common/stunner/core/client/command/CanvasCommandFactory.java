@@ -16,8 +16,6 @@
 
 package org.kie.workbench.common.stunner.core.client.command;
 
-import java.util.function.Consumer;
-
 import org.kie.workbench.common.stunner.core.client.canvas.CanvasHandler;
 import org.kie.workbench.common.stunner.core.definition.morph.MorphDefinition;
 import org.kie.workbench.common.stunner.core.graph.Edge;
@@ -25,6 +23,7 @@ import org.kie.workbench.common.stunner.core.graph.Element;
 import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.content.definition.Definition;
 import org.kie.workbench.common.stunner.core.graph.content.view.Connection;
+import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
 import org.kie.workbench.common.stunner.core.graph.content.view.View;
 
 public interface CanvasCommandFactory<H extends CanvasHandler> {
@@ -92,6 +91,5 @@ public interface CanvasCommandFactory<H extends CanvasHandler> {
 
     CanvasCommand<H> clearCanvas();
 
-    CanvasCommand<H> cloneNode(final Node candidate, Consumer<Node> clone);
-
+    CanvasCommand<H> cloneNode(Node candidate, String parentUuid, Point2D cloneLocation);
 }

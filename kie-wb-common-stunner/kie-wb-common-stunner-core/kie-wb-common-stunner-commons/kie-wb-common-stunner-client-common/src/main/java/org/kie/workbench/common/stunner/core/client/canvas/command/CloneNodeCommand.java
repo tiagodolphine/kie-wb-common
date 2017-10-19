@@ -16,7 +16,7 @@
 
 package org.kie.workbench.common.stunner.core.client.canvas.command;
 
-import java.util.function.Consumer;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
@@ -26,6 +26,8 @@ import org.kie.workbench.common.stunner.core.command.CompositeCommand;
 import org.kie.workbench.common.stunner.core.command.impl.CompositeCommandImpl;
 import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.command.GraphCommandExecutionContext;
+import org.kie.workbench.common.stunner.core.graph.command.impl.UpdateElementPositionCommand;
+import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
 import org.kie.workbench.common.stunner.core.rule.RuleViolation;
 
 public class CloneNodeCommand extends AbstractCanvasGraphCommand {
@@ -33,24 +35,35 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
     private static Logger LOGGER = Logger.getLogger(CloneNodeCommand.class.getName());
 
     private final Node candidate;
-    private Consumer<Node> cloned;
+    private final String parentUuid;
+    private Optional<Point2D> cloneLocation;
     private transient CompositeCommand<AbstractCanvasHandler, CanvasViolation> command;
 
     @SuppressWarnings("unchecked")
-    public CloneNodeCommand(final Node candidate, Consumer<Node> cloned) {
+    public CloneNodeCommand(final Node candidate, String parentUuid, Point2D cloneLocation) {
         this.command = new CompositeCommandImpl.CompositeCommandBuilder<AbstractCanvasHandler, CanvasViolation>()
-                .reverse()
+                .forward()
                 .build();
         this.candidate = candidate;
-        this.cloned = cloned;
+        this.cloneLocation = Optional.ofNullable(cloneLocation);
+        this.parentUuid = parentUuid;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     protected Command<GraphCommandExecutionContext, RuleViolation> newGraphCommand(final AbstractCanvasHandler context) {
-        return new org.kie.workbench.common.stunner.core.graph.command.impl.CloneNodeCommand(candidate, clone -> {
-            this.command.addCommand(new CloneCanvasNodeCommand(clone, context.getDiagram().getMetadata().getShapeSetId()));
-            this.cloned.accept(clone);
+        return new org.kie.workbench.common.stunner.core.graph.command.impl.CloneNodeCommand(candidate, parentUuid, clone -> {
+            //success cloned
+            command.addCommand(new CloneCanvasNodeCommand(clone, context.getDiagram().getMetadata().getShapeSetId()));
+
+            //update position of cloned node
+//            cloneLocation.ifPresent(point -> {
+//                //graph position update
+//                new UpdateElementPositionCommand(context.getGraphIndex().getNode(clone.getUUID()), point.getX(), point.getY()).execute(context.getGraphExecutionContext());
+//
+//                //than update canvas position
+//                command.addCommand(new UpdateCanvasElementPositionCommand(clone));
+//            });
         });
     }
 

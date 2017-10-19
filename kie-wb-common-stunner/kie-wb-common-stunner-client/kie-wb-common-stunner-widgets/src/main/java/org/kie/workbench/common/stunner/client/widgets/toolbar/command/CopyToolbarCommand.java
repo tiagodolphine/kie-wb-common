@@ -21,16 +21,18 @@ import javax.inject.Inject;
 
 import org.gwtbootstrap3.client.ui.constants.IconType;
 import org.kie.workbench.common.stunner.core.client.session.ClientFullSession;
-import org.kie.workbench.common.stunner.core.client.session.command.impl.CopyCutPasteSelectionSessionCommand;
-import org.kie.workbench.common.stunner.core.client.session.command.impl.SessionCommandFactory;
+import org.kie.workbench.common.stunner.core.client.session.command.impl.PasteSelectionSessionCommand;
 
 // TODO: I18n.
 @Dependent
-public class CopyToolbarCommand extends AbstractToolbarCommand<ClientFullSession, CopyCutPasteSelectionSessionCommand> {
+public class CopyToolbarCommand extends AbstractToolbarCommand<ClientFullSession, PasteSelectionSessionCommand> {
+
+    private PasteSelectionSessionCommand pasteSelectionSessionCommand;
 
     @Inject
-    public CopyToolbarCommand(final SessionCommandFactory sessionCommandFactory) {
-        super(sessionCommandFactory.newCopySelectionSessionCommand());
+    public CopyToolbarCommand(final PasteSelectionSessionCommand pasteSelectionSessionCommand) {
+        super(pasteSelectionSessionCommand);
+        this.pasteSelectionSessionCommand = pasteSelectionSessionCommand;
     }
 
     @Override
@@ -51,5 +53,12 @@ public class CopyToolbarCommand extends AbstractToolbarCommand<ClientFullSession
     @Override
     protected boolean requiresConfirm() {
         return false;
+    }
+
+
+    @Override
+    public void execute() {
+        super.execute();
+        //handle copy
     }
 }

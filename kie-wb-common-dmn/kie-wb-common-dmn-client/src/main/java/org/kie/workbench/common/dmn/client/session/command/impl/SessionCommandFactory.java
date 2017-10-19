@@ -23,7 +23,7 @@ import org.jboss.errai.ioc.client.api.ManagedInstance;
 import org.kie.workbench.common.dmn.api.qualifiers.DMNEditor;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ClearSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ClearStatesSessionCommand;
-import org.kie.workbench.common.stunner.core.client.session.command.impl.CopyCutPasteSelectionSessionCommand;
+import org.kie.workbench.common.stunner.core.client.session.command.impl.PasteSelectionSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.DeleteSelectionSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ExportToJpgSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ExportToPdfSessionCommand;
@@ -54,7 +54,7 @@ public class SessionCommandFactory extends org.kie.workbench.common.stunner.core
                                  final ManagedInstance<ExportToPngSessionCommand> exportImageSessionCommand,
                                  final ManagedInstance<ExportToJpgSessionCommand> exportImageJPGSessionCommand,
                                  final ManagedInstance<ExportToPdfSessionCommand> exportPDFSessionCommand,
-                                 final ManagedInstance<CopyCutPasteSelectionSessionCommand> copySelectionSessionCommand) {
+                                 final ManagedInstance<PasteSelectionSessionCommand> copySelectionSessionCommand) {
         super(clearStatesCommand,
               visitGraphCommand,
               switchGridCommand,

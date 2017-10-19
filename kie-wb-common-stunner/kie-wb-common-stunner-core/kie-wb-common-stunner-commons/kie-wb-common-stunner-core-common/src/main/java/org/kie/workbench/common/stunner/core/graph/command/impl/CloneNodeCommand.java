@@ -17,59 +17,106 @@ package org.kie.workbench.common.stunner.core.graph.command.impl;
 
 import java.util.Optional;
 
+import com.google.gwt.core.client.GWT;
 import org.jboss.errai.common.client.api.annotations.MapsTo;
 import org.jboss.errai.common.client.api.annotations.NonPortable;
 import org.jboss.errai.common.client.api.annotations.Portable;
 import org.kie.soup.commons.validation.PortablePreconditions;
 import org.kie.workbench.common.stunner.core.command.CommandResult;
+import org.kie.workbench.common.stunner.core.command.impl.AbstractCompositeCommand;
+import org.kie.workbench.common.stunner.core.command.util.CommandUtils;
+import org.kie.workbench.common.stunner.core.diagram.Diagram;
+import org.kie.workbench.common.stunner.core.diagram.DiagramImpl;
 import org.kie.workbench.common.stunner.core.graph.Edge;
+import org.kie.workbench.common.stunner.core.graph.Graph;
 import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.command.GraphCommandExecutionContext;
 import org.kie.workbench.common.stunner.core.graph.command.GraphCommandResultBuilder;
 import org.kie.workbench.common.stunner.core.graph.content.definition.Definition;
+import org.kie.workbench.common.stunner.core.graph.content.definition.DefinitionSet;
+import org.kie.workbench.common.stunner.core.graph.content.view.BoundsImpl;
+import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
+import org.kie.workbench.common.stunner.core.graph.content.view.View;
+import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
 import org.kie.workbench.common.stunner.core.rule.RuleViolation;
 import org.kie.workbench.common.stunner.core.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * A Command to add a node as a child for the main graph instance.
- * It check parent cardinality rules and containment rules as we..
+ * A Command to clone a node and add as a child of the given parent.
  */
 @Portable
-public final class CloneNodeCommand extends AbstractGraphCommand {
+public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
 
     private final Node<Definition, Edge> candidate;
-    private Optional<CloneNodeCommandCallback> callback;
+    private final Optional<String> parentUuidOptional;
+    private Node clone;
+    private Optional<CloneNodeCommandCallback> callbackOptional;
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CloneNodeCommand.class);
+
+    /**
+     * Callback interface to be used whether it is necessary to receive the cloned node after
+     * the {{@link CloneNodeCommand#execute(GraphCommandExecutionContext)}} is called.
+     */
     @NonPortable
     public interface CloneNodeCommandCallback {
-        void success(Node<Definition, Edge> candidate);
+
+        void cloned(Node<Definition, Edge> candidate);
     }
 
-    public CloneNodeCommand(final @MapsTo("candidate") Node candidate) {
-        //this.candidate = PortablePreconditions.checkNotNull("candidate", candidate);
-        this.candidate = candidate;
-
+    public CloneNodeCommand(final @MapsTo("candidate") Node candidate, final @MapsTo("parentUuid") String parentUuid) {
+        this(PortablePreconditions.checkNotNull("candidate", candidate),
+             PortablePreconditions.checkNotNull("parentUuid", parentUuid), null);
     }
 
-    public CloneNodeCommand(Node candidate, CloneNodeCommandCallback callback) {
+    public CloneNodeCommand(final Node candidate, final String parentUuid, final CloneNodeCommandCallback callback) {
         this.candidate = candidate;
-        this.callback = Optional.ofNullable(callback);
+        this.parentUuidOptional = Optional.ofNullable(parentUuid);
+        this.callbackOptional = Optional.ofNullable(callback);
     }
 
     @Override
-    protected CommandResult<RuleViolation> check(GraphCommandExecutionContext context) {
-        return GraphCommandResultBuilder.SUCCESS;
+    @SuppressWarnings("unchecked")
+    public CommandResult<RuleViolation> allow(final GraphCommandExecutionContext context) {
+        //TODO: validation
+
+        return super.allow(context);
+    }
+
+    @Override
+    protected boolean delegateRulesContextToChildren() {
+        return false;
+    }
+
+    @Override
+    protected AbstractCompositeCommand<GraphCommandExecutionContext, RuleViolation> initialize(GraphCommandExecutionContext context) {
+
+        final Object bean = candidate.getContent().getDefinition();
+        clone = context.getFactoryManager().newElement(UUID.uuid(), bean.getClass()).asNode();
+
+        //TODO: Copy the "name" property value.
+        //see MorphAdapter
+
+        addCommand(new RegisterNodeCommand(clone));
+        addCommand(new AddChildNodeCommand(getDefaultParentUUID(), clone, 0d, 0d));
+        return this;
+    }
+
+    private String getDefaultParentUUID() {
+        return parentUuidOptional.orElse(GraphUtils.getParent(candidate).getUUID());
     }
 
     @Override
     public CommandResult<RuleViolation> execute(GraphCommandExecutionContext context) {
-        final Object bean = candidate.getContent().getDefinition();
-        final String beanId = context.getDefinitionManager().adapters().forDefinition().getId(bean);
-        final Node node = context.getFactoryManager().newElement(UUID.uuid(), beanId).asNode();
-
-        //TODO: Copy the "name" property value.
-        CommandResult<RuleViolation> result = new RegisterNodeCommand(node).execute(context);
-        callback.ifPresent(c -> c.success(node));
+        CommandResult<RuleViolation> result = super.execute(context);
+        callbackOptional.ifPresent(callback -> {
+            if (!CommandUtils.isError(result)) {
+                callback.cloned(clone);
+                LOGGER.info("Node {} was cloned successfully to  {} ", candidate, clone);
+            }
+        });
         return result;
     }
 
