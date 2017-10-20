@@ -24,6 +24,7 @@ import org.kie.workbench.common.dmn.api.qualifiers.DMNEditor;
 import org.kie.workbench.common.stunner.client.widgets.toolbar.command.ClearStatesToolbarCommand;
 import org.kie.workbench.common.stunner.client.widgets.toolbar.command.ClearToolbarCommand;
 import org.kie.workbench.common.stunner.client.widgets.toolbar.command.CopyToolbarCommand;
+import org.kie.workbench.common.stunner.client.widgets.toolbar.command.CutToolbarCommand;
 import org.kie.workbench.common.stunner.client.widgets.toolbar.command.DeleteSelectionToolbarCommand;
 import org.kie.workbench.common.stunner.client.widgets.toolbar.command.ExportToJpgToolbarCommand;
 import org.kie.workbench.common.stunner.client.widgets.toolbar.command.ExportToPdfToolbarCommand;
@@ -56,6 +57,7 @@ public class ToolbarCommandFactory extends org.kie.workbench.common.stunner.clie
                                  final ManagedInstance<ExportToJpgToolbarCommand> exportToJpgToolbarCommand,
                                  final ManagedInstance<ExportToPdfToolbarCommand> exportToPdfToolbarCommand,
                                  final ManagedInstance<CopyToolbarCommand> copyToolbarCommand,
+                                 final ManagedInstance<CutToolbarCommand> cutToolbarCommand,
                                  final ManagedInstance<PasteToolbarCommand> pasteToolbarCommand) {
         super(clearStatesCommand,
               visitGraphCommand,
@@ -69,6 +71,7 @@ public class ToolbarCommandFactory extends org.kie.workbench.common.stunner.clie
               exportToJpgToolbarCommand,
               exportToPdfToolbarCommand,
               copyToolbarCommand,
+              cutToolbarCommand,
               pasteToolbarCommand);
     }
 }

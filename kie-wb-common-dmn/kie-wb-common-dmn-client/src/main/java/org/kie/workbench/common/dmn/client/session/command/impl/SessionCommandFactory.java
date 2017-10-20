@@ -24,6 +24,7 @@ import org.kie.workbench.common.dmn.api.qualifiers.DMNEditor;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ClearSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ClearStatesSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.CopySelectionSessionCommand;
+import org.kie.workbench.common.stunner.core.client.session.command.impl.CutSelectionSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.PasteSelectionSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.DeleteSelectionSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ExportToJpgSessionCommand;
@@ -56,7 +57,8 @@ public class SessionCommandFactory extends org.kie.workbench.common.stunner.core
                                  final ManagedInstance<ExportToJpgSessionCommand> exportImageJPGSessionCommand,
                                  final ManagedInstance<ExportToPdfSessionCommand> exportPDFSessionCommand,
                                  final ManagedInstance<CopySelectionSessionCommand> copySelectionSessionCommand,
-                                 final ManagedInstance<PasteSelectionSessionCommand> pasteSelectionSessionCommand) {
+                                 final ManagedInstance<PasteSelectionSessionCommand> pasteSelectionSessionCommand,
+                                 final ManagedInstance<CutSelectionSessionCommand> cutSelectionSessionCommand) {
         super(clearStatesCommand,
               visitGraphCommand,
               switchGridCommand,
@@ -69,6 +71,7 @@ public class SessionCommandFactory extends org.kie.workbench.common.stunner.core
               exportImageJPGSessionCommand,
               exportPDFSessionCommand,
               copySelectionSessionCommand,
-              pasteSelectionSessionCommand);
+              pasteSelectionSessionCommand,
+              cutSelectionSessionCommand);
     }
 }

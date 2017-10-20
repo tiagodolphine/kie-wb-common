@@ -43,6 +43,7 @@ import org.kie.workbench.common.stunner.core.client.session.command.ClientSessio
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ClearSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ClearStatesSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.CopySelectionSessionCommand;
+import org.kie.workbench.common.stunner.core.client.session.command.impl.CutSelectionSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.DeleteSelectionSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ExportToJpgSessionCommand;
 import org.kie.workbench.common.stunner.core.client.session.command.impl.ExportToPdfSessionCommand;
@@ -167,6 +168,7 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
         commands.put(ExportToPdfSessionCommand.class, sessionCommandFactory.newExportToPdfSessionCommand());
         commands.put(CopySelectionSessionCommand.class, sessionCommandFactory.newCopySelectionCommand());
         commands.put(PasteSelectionSessionCommand.class, sessionCommandFactory.newPasteSelectionCommand());
+        commands.put(CutSelectionSessionCommand.class, sessionCommandFactory.newCutSelectionCommand());
     }
 
     protected abstract int getCanvasWidth();
@@ -335,8 +337,10 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
         getCommand(UndoSessionCommand.class).listen(() -> undoItem.setEnabled(getCommand(UndoSessionCommand.class).isEnabled()));
         final MenuItem redoItem = menuItemsBuilder.newRedoItem(AbstractProjectDiagramEditor.this::menu_redo);
         getCommand(RedoSessionCommand.class).listen(() -> redoItem.setEnabled(getCommand(RedoSessionCommand.class).isEnabled()));
-        final MenuItem validateItem = menuItemsBuilder.newValidateItem(AbstractProjectDiagramEditor.this::menu_validate);
+
+        final MenuItem validateItem = menuItemsBuilder.newValidateItem(() -> validate(() -> hideLoadingViews()));
         getCommand(ValidateSessionCommand.class).listen(() -> validateItem.setEnabled(getCommand(ValidateSessionCommand.class).isEnabled()));
+
         final MenuItem exportsItem = menuItemsBuilder.newExportsItem(AbstractProjectDiagramEditor.this::export_imagePNG,
                                                                      AbstractProjectDiagramEditor.this::export_imageJPG,
                                                                      AbstractProjectDiagramEditor.this::export_imagePDF);
@@ -344,6 +348,7 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
         getCommand(ExportToJpgSessionCommand.class).listen(() -> exportsItem.setEnabled(getCommand(ExportToJpgSessionCommand.class).isEnabled()));
         getCommand(ExportToPdfSessionCommand.class).listen(() -> exportsItem.setEnabled(getCommand(ExportToPdfSessionCommand.class).isEnabled()));
         final MenuItem copyItem = menuItemsBuilder.newCopyItem(() -> getCommand(CopySelectionSessionCommand.class).execute());
+        final MenuItem cutItem = menuItemsBuilder.newCutItem(() -> getCommand(CutSelectionSessionCommand.class).execute());
         final MenuItem pasteItem = menuItemsBuilder.newPasteItem(() -> getCommand(PasteSelectionSessionCommand.class).execute());
 
         // Build the menu.
@@ -359,6 +364,7 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
                 .addNewTopLevelMenu(validateItem)
                 .addNewTopLevelMenu(exportsItem)
                 .addNewTopLevelMenu(copyItem)
+                .addNewTopLevelMenu(cutItem)
                 .addNewTopLevelMenu(pasteItem);
 
         if (menuItemsBuilder.isDevItemsEnabled()) {
@@ -437,10 +443,6 @@ public abstract class AbstractProjectDiagramEditor<R extends ClientResourceType>
 
     private void export_imagePDF() {
         getCommand(ExportToPdfSessionCommand.class).execute();
-    }
-
-    private void menu_validate() {
-        this.validate(() -> hideLoadingViews());
     }
 
     protected void doOpen() {

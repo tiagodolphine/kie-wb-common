@@ -16,81 +16,69 @@
 
 package org.kie.workbench.common.stunner.core.client.session.command.impl;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 
 import com.google.gwt.core.client.GWT;
-import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
-import org.kie.workbench.common.stunner.core.client.canvas.controls.clipboard.ClipboardControl;
-import org.kie.workbench.common.stunner.core.client.command.CanvasViolation;
 import org.kie.workbench.common.stunner.core.client.event.keyboard.KeyboardEvent.Key;
-import org.kie.workbench.common.stunner.core.client.service.ClientRuntimeError;
-import org.kie.workbench.common.stunner.core.command.impl.CompositeCommandImpl.CompositeCommandBuilder;
+import org.kie.workbench.common.stunner.core.client.session.ClientFullSession;
+import org.kie.workbench.common.stunner.core.client.session.command.AbstractClientSessionCommand;
 
-import static org.kie.soup.commons.validation.PortablePreconditions.checkNotNull;
 import static org.kie.workbench.common.stunner.core.client.canvas.controls.keyboard.KeysMatcher.doKeysMatch;
-import static org.kie.workbench.common.stunner.core.client.event.keyboard.KeyboardEvent.Key.CONTROL;
 
 /**
  * This session command obtains the selected elements on session and executes a delete operation for each one.
  * It also captures the <code>DELETE</code> keyboard event and fires the delete operation as well.
  */
 @Dependent
-public class CutSelectionSessionCommand {
+public class CutSelectionSessionCommand extends AbstractClientSessionCommand<ClientFullSession> {
 
-//    private static Logger LOGGER = Logger.getLogger(CutSelectionSessionCommand.class.getName());
-//
-//    protected CutSelectionSessionCommand() {
-//        this(null);
-//    }
-//
-//    @Inject
-//    public CutSelectionSessionCommand(ClipboardControl clipboardControl) {
-//        super(clipboardControl);
-//    }
-//
-//    @Override
-//    public <V> void execute(final Callback<V> callback) {
-//        checkNotNull("callback",
-//                     callback);
-//
-//        CompositeCommandBuilder<AbstractCanvasHandler, CanvasViolation> commandBuilder = new CompositeCommandBuilder<>();
-//
-//        // Execute the command.
-//        //final CommandResult<CanvasViolation> result = sessionCommandManager.execute(getCanvasHandler(), commandBuilder.build());
-//
-//        //Send feedback.
-//        //setCallback(callback, result);
-//
-//    }
-//
-//    @Override
-//    protected void onKeyDownEvent(final Key... keys) {
-//        handleCtrlX(keys);
-//    }
-//
-//    private void handleCtrlX(Key[] keys) {
-//        if (doKeysMatch(keys, CONTROL, Key.X)) {
-//            GWT.log("CTRL + C");
-//        }
-//    }
-//
-//    private Callback<ClientRuntimeError> newDefaultCallback() {
-//        return new Callback<ClientRuntimeError>() {
-//            @Override
-//            public void onSuccess() {
-//                // Nothing to do.
-//            }
-//
-//            @Override
-//            public void onError(final ClientRuntimeError error) {
-//                LOGGER.log(Level.SEVERE,
-//                           "Error while trying to delete selected items. Message=[" + error.toString() + "]",
-//                           error.getThrowable());
-//            }
-//        };
-//    }
+    private final CopySelectionSessionCommand copySelectionSessionCommand;
+    private final DeleteSelectionSessionCommand deleteSelectionSessionCommand;
+
+    protected CutSelectionSessionCommand() {
+        this(null, null);
+    }
+
+    @Inject
+    public CutSelectionSessionCommand(final CopySelectionSessionCommand copySelectionSessionCommand, final DeleteSelectionSessionCommand deleteSelectionSessionCommand) {
+        super(true);
+        this.copySelectionSessionCommand = copySelectionSessionCommand;
+        this.deleteSelectionSessionCommand = deleteSelectionSessionCommand;
+    }
+
+    @Override
+    public void bind(final ClientFullSession session) {
+        super.bind(session);
+        copySelectionSessionCommand.bind(getSession());
+        deleteSelectionSessionCommand.bind(getSession());
+        session.getKeyboardControl().addKeyShortcutCallback(this::onKeyDownEvent);
+    }
+
+    protected void onKeyDownEvent(final Key... keys) {
+        handleCtrlX(keys);
+    }
+
+    private void handleCtrlX(Key[] keys) {
+        if (doKeysMatch(keys, Key.CONTROL, Key.X)) {
+            this.execute(newDefaultCallback("Error while trying to cut selected items. Message="));
+            GWT.log("CTRL + X");
+        }
+    }
+
+    @Override
+    public <V> void execute(Callback<V> callback) {
+
+        copySelectionSessionCommand.execute(new Callback<V>() {
+            @Override
+            public void onSuccess() {
+                deleteSelectionSessionCommand.execute(callback);
+            }
+
+            @Override
+            public void onError(V error) {
+                callback.onError(error);
+            }
+        });
+    }
 }

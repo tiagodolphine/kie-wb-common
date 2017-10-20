@@ -16,6 +16,7 @@
 
 package org.kie.workbench.common.stunner.core.client.session.command.impl;
 
+import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -43,8 +44,6 @@ import org.kie.workbench.common.stunner.core.graph.content.view.View;
 
 import static org.kie.soup.commons.validation.PortablePreconditions.checkNotNull;
 import static org.kie.workbench.common.stunner.core.client.canvas.controls.keyboard.KeysMatcher.doKeysMatch;
-import static org.kie.workbench.common.stunner.core.client.event.keyboard.KeyboardEvent.Key.CONTROL;
-import static org.kie.workbench.common.stunner.core.client.event.keyboard.KeyboardEvent.Key.V;
 
 /**
  * This session command obtains the selected elements on session and executes a delete operation for each one.
@@ -83,6 +82,17 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
         session.getKeyboardControl().addKeyShortcutCallback(this::onKeyDownEvent);
     }
 
+    void onKeyDownEvent(final Key... keys) {
+        handleCtrlV(keys);
+    }
+
+    private void handleCtrlV(Key[] keys) {
+        if (doKeysMatch(keys, Key.CONTROL, Key.V)) {
+            GWT.log("CTRL + V");
+            this.execute(newDefaultCallback("Error while trying to paste selected items. Message="));
+        }
+    }
+
     @Override
     public <V> void execute(final Callback<V> callback) {
         checkNotNull("callback",
@@ -90,9 +100,13 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
 
         if (clipboardControl.hasElements()) {
             final CompositeCommandBuilder<AbstractCanvasHandler, CanvasViolation> commandBuilder = new CompositeCommandBuilder<>();
+
+            //for now just pasting Nodes not Edges
             final String canvasRootUUID = getCanvasHandler().getDiagram().getMetadata().getCanvasRootUUID();
             commandBuilder.addCommands(clipboardControl.getElements().stream()
+                                               .filter(element -> element instanceof Node)
                                                .map(Element::asNode)
+                                               .filter(Objects::nonNull)
                                                .map(node -> (Node<View<?>, Edge>) node)
                                                .map(node -> canvasCommandFactory.cloneNode(node, canvasRootUUID, calculateNewLocation(node)))
                                                .collect(Collectors.toList()));
@@ -111,16 +125,5 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
         final double y = bounds.getY();
 
         return new Point2D(x + 15, y + 15);
-    }
-
-    void onKeyDownEvent(final Key... keys) {
-        handleCtrlV(keys);
-    }
-
-    private void handleCtrlV(Key[] keys) {
-        if (doKeysMatch(keys, CONTROL, V)) {
-            GWT.log("CTRL + V");
-            this.execute(newDefaultCallback("Error while trying to paste selected items. Message="));
-        }
     }
 }

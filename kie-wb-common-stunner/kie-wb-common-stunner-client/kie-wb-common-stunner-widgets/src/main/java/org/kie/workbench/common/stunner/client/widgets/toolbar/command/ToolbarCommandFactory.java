@@ -36,10 +36,12 @@ public class ToolbarCommandFactory {
     private final ManagedInstance<ExportToJpgToolbarCommand> exportToJpgToolbarCommand;
     private final ManagedInstance<ExportToPdfToolbarCommand> exportToPdfToolbarCommand;
     private final ManagedInstance<CopyToolbarCommand> copyToolbarCommand;
+    private final ManagedInstance<CutToolbarCommand> cutToolbarCommand;
     private final ManagedInstance<PasteToolbarCommand> pasteToolbarCommand;
 
     protected ToolbarCommandFactory() {
         this(null,
+             null,
              null,
              null,
              null,
@@ -67,6 +69,7 @@ public class ToolbarCommandFactory {
                                  final ManagedInstance<ExportToJpgToolbarCommand> exportToJpgToolbarCommand,
                                  final ManagedInstance<ExportToPdfToolbarCommand> exportToPdfToolbarCommand,
                                  final ManagedInstance<CopyToolbarCommand> copyToolbarCommand,
+                                 final ManagedInstance<CutToolbarCommand> cutToolbarCommand,
                                  final ManagedInstance<PasteToolbarCommand> pasteToolbarCommand) {
         this.clearStatesCommand = clearStatesCommand;
         this.visitGraphCommand = visitGraphCommand;
@@ -80,6 +83,7 @@ public class ToolbarCommandFactory {
         this.exportToJpgToolbarCommand = exportToJpgToolbarCommand;
         this.exportToPdfToolbarCommand = exportToPdfToolbarCommand;
         this.copyToolbarCommand = copyToolbarCommand;
+        this.cutToolbarCommand = cutToolbarCommand;
         this.pasteToolbarCommand = pasteToolbarCommand;
     }
 
@@ -129,6 +133,10 @@ public class ToolbarCommandFactory {
 
     public CopyToolbarCommand newCopyCommand() {
         return copyToolbarCommand.get();
+    }
+
+    public CutToolbarCommand newCutToolbarCommand() {
+        return cutToolbarCommand.get();
     }
 
     public PasteToolbarCommand newPasteCommand() {

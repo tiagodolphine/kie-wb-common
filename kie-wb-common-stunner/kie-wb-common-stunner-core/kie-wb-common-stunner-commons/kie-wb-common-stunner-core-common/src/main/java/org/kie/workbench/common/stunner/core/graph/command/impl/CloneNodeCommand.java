@@ -16,8 +16,8 @@
 package org.kie.workbench.common.stunner.core.graph.command.impl;
 
 import java.util.Optional;
+import java.util.logging.Logger;
 
-import com.google.gwt.core.client.GWT;
 import org.jboss.errai.common.client.api.annotations.MapsTo;
 import org.jboss.errai.common.client.api.annotations.NonPortable;
 import org.jboss.errai.common.client.api.annotations.Portable;
@@ -25,23 +25,16 @@ import org.kie.soup.commons.validation.PortablePreconditions;
 import org.kie.workbench.common.stunner.core.command.CommandResult;
 import org.kie.workbench.common.stunner.core.command.impl.AbstractCompositeCommand;
 import org.kie.workbench.common.stunner.core.command.util.CommandUtils;
-import org.kie.workbench.common.stunner.core.diagram.Diagram;
-import org.kie.workbench.common.stunner.core.diagram.DiagramImpl;
 import org.kie.workbench.common.stunner.core.graph.Edge;
-import org.kie.workbench.common.stunner.core.graph.Graph;
+import org.kie.workbench.common.stunner.core.graph.Element;
 import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.command.GraphCommandExecutionContext;
 import org.kie.workbench.common.stunner.core.graph.command.GraphCommandResultBuilder;
 import org.kie.workbench.common.stunner.core.graph.content.definition.Definition;
-import org.kie.workbench.common.stunner.core.graph.content.definition.DefinitionSet;
-import org.kie.workbench.common.stunner.core.graph.content.view.BoundsImpl;
-import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
-import org.kie.workbench.common.stunner.core.graph.content.view.View;
 import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
 import org.kie.workbench.common.stunner.core.rule.RuleViolation;
 import org.kie.workbench.common.stunner.core.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 /**
  * A Command to clone a node and add as a child of the given parent.
@@ -54,7 +47,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
     private Node clone;
     private Optional<CloneNodeCommandCallback> callbackOptional;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CloneNodeCommand.class);
+    private static Logger LOGGER = Logger.getLogger(CloneNodeCommand.class.getName());
 
     /**
      * Callback interface to be used whether it is necessary to receive the cloned node after
@@ -100,12 +93,26 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
         //see MorphAdapter
 
         addCommand(new RegisterNodeCommand(clone));
-        addCommand(new AddChildNodeCommand(getDefaultParentUUID(), clone, 0d, 0d));
+
+        Optional<String> parentUUID = getParentUUID();
+        if(!parentUUID.isPresent()){
+            throw new IllegalStateException("Parent not found for clone node " + clone);
+        }
+        addCommand(new AddChildNodeCommand(parentUUID.get(), clone, 0d, 0d));
+
         return this;
     }
 
-    private String getDefaultParentUUID() {
-        return parentUuidOptional.orElse(GraphUtils.getParent(candidate).getUUID());
+    private Optional<String> getParentUUID() {
+        return parentUuidOptional.isPresent() ? parentUuidOptional : getDefaultParent();
+    }
+
+    private Optional<String> getDefaultParent() {
+        Optional<? extends Element<?>> parent = Optional.ofNullable(GraphUtils.getParent(candidate));
+        if(parent.isPresent()){
+            return Optional.of(parent.get().getUUID());
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -114,7 +121,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
         callbackOptional.ifPresent(callback -> {
             if (!CommandUtils.isError(result)) {
                 callback.cloned(clone);
-                LOGGER.info("Node {} was cloned successfully to  {} ", candidate, clone);
+                LOGGER.info("Node "+ candidate.getUUID() + "was cloned successfully to " + clone.getUUID());
             }
         });
         return result;

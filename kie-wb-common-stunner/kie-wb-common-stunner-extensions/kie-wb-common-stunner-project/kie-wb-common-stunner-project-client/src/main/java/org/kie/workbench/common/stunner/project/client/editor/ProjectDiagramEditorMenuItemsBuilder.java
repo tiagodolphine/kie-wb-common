@@ -117,7 +117,7 @@ public class ProjectDiagramEditorMenuItemsBuilder {
         return new Button() {{
             setSize(ButtonSize.SMALL);
             setIcon(IconType.COPY);
-            setTitle("Copy");
+            setTitle("Copy selection");
             addClickHandler(clickEvent -> command.execute());
         }};
     }
@@ -130,7 +130,20 @@ public class ProjectDiagramEditorMenuItemsBuilder {
         return new Button() {{
             setSize(ButtonSize.SMALL);
             setIcon(IconType.PASTE);
-            setTitle("Paste");
+            setTitle("Paste selection");
+            addClickHandler(clickEvent -> command.execute());
+        }};
+    }
+
+    public MenuItem newCutItem(final Command command) {
+        return buildItem(buildCutItem(command));
+    }
+
+    private IsWidget buildCutItem(final Command command) {
+        return new Button() {{
+            setSize(ButtonSize.SMALL);
+            setIcon(IconType.CUT);
+            setTitle("Cut selection");
             addClickHandler(clickEvent -> command.execute());
         }};
     }
