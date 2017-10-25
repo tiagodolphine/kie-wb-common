@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package org.kie.workbench.common.stunner.core.definition.morph;
+package org.kie.workbench.common.stunner.core.definition.clone;
 
-import org.kie.workbench.common.stunner.core.definition.clone.ClonePolicy;
+import org.jboss.errai.common.client.api.annotations.Portable;
 
-// TODO: Refactor to #getTargets()
-//      - Bindable impl -> do not use a map, as single class a key is available
-public interface MorphDefinition {
-
-    boolean accepts(final String definitionId);
-
-    String getBase();
-
-    String getDefault();
-
-    Iterable<String> getTargets(final String definitionId);
-
-    ClonePolicy getPolicy();
+/**
+ * The different built-in policies when morphing.
+ */
+@Portable
+public enum ClonePolicy {
+    /* Keep all potential properties that match. */
+    ALL,
+    /* Discard all properties. */
+    NONE,
+    /* Keep only node's name property. */
+    DEFAULT;
 }

@@ -47,7 +47,8 @@ public class AddChildNodeCommand extends AbstractGraphCompositeCommand {
     private final Double y;
     private transient Node<?, Edge> parent;
 
-    public AddChildNodeCommand(final @MapsTo("parentUUID") String parentUUID,
+    public
+    AddChildNodeCommand(final @MapsTo("parentUUID") String parentUUID,
                                final @MapsTo("candidate") Node candidate,
                                final @MapsTo("x") Double x,
                                final @MapsTo("y") Double y) {

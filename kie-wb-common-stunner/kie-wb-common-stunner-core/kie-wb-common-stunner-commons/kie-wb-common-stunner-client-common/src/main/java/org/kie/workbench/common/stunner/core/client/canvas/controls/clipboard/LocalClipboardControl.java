@@ -29,9 +29,10 @@ import org.kie.workbench.common.stunner.core.graph.Element;
 @ApplicationScoped
 public class LocalClipboardControl implements ClipboardControl<Element> {
 
-    private final static Set<Element> elements = new HashSet<>();
+    private final Set<Element> elements;
 
     public LocalClipboardControl() {
+        this.elements = new HashSet<>();
     }
 
     @Override

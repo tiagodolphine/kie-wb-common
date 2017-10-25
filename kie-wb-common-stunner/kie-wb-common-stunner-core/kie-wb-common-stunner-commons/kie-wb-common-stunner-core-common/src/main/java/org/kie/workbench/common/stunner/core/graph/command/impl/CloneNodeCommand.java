@@ -25,6 +25,7 @@ import org.kie.soup.commons.validation.PortablePreconditions;
 import org.kie.workbench.common.stunner.core.command.CommandResult;
 import org.kie.workbench.common.stunner.core.command.impl.AbstractCompositeCommand;
 import org.kie.workbench.common.stunner.core.command.util.CommandUtils;
+import org.kie.workbench.common.stunner.core.definition.clone.ClonePolicy;
 import org.kie.workbench.common.stunner.core.graph.Edge;
 import org.kie.workbench.common.stunner.core.graph.Element;
 import org.kie.workbench.common.stunner.core.graph.Node;
@@ -35,7 +36,6 @@ import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
 import org.kie.workbench.common.stunner.core.rule.RuleViolation;
 import org.kie.workbench.common.stunner.core.util.UUID;
 
-
 /**
  * A Command to clone a node and add as a child of the given parent.
  */
@@ -44,7 +44,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
 
     private final Node<Definition, Edge> candidate;
     private final Optional<String> parentUuidOptional;
-    private Node clone;
+    private Node<Definition, Edge> clone;
     private Optional<CloneNodeCommandCallback> callbackOptional;
 
     private static Logger LOGGER = Logger.getLogger(CloneNodeCommand.class.getName());
@@ -57,6 +57,10 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
     public interface CloneNodeCommandCallback {
 
         void cloned(Node<Definition, Edge> candidate);
+    }
+
+    protected CloneNodeCommand() {
+        this(null, null);
     }
 
     public CloneNodeCommand(final @MapsTo("candidate") Node candidate, final @MapsTo("parentUuid") String parentUuid) {
@@ -87,18 +91,21 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
     protected AbstractCompositeCommand<GraphCommandExecutionContext, RuleViolation> initialize(GraphCommandExecutionContext context) {
 
         final Object bean = candidate.getContent().getDefinition();
-        clone = context.getFactoryManager().newElement(UUID.uuid(), bean.getClass()).asNode();
+        clone = (Node<Definition, Edge>) context.getFactoryManager().newElement(UUID.uuid(), bean.getClass()).asNode();
 
-        //TODO: Copy the "name" property value.
-        //see MorphAdapter
+        //Cloning the node content with properties
+        Object clonedDefinition = context.getDefinitionManager().cloneManager().clone(candidate.getContent().getDefinition(), ClonePolicy.ALL);
+        clone.getContent().setDefinition(clonedDefinition);
 
-        addCommand(new RegisterNodeCommand(clone));
-
+        //setting the node parent
         Optional<String> parentUUID = getParentUUID();
-        if(!parentUUID.isPresent()){
+        if (!parentUUID.isPresent()) {
             throw new IllegalStateException("Parent not found for clone node " + clone);
         }
-        addCommand(new AddChildNodeCommand(parentUUID.get(), clone, 0d, 0d));
+
+        //creating node commands to be executed
+        addCommand(new RegisterNodeCommand(clone));
+        addCommand(new AddChildNodeCommand(parentUUID.get(), clone, null, null));
 
         return this;
     }
@@ -109,7 +116,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
 
     private Optional<String> getDefaultParent() {
         Optional<? extends Element<?>> parent = Optional.ofNullable(GraphUtils.getParent(candidate));
-        if(parent.isPresent()){
+        if (parent.isPresent()) {
             return Optional.of(parent.get().getUUID());
         }
         return Optional.empty();
@@ -121,7 +128,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
         callbackOptional.ifPresent(callback -> {
             if (!CommandUtils.isError(result)) {
                 callback.cloned(clone);
-                LOGGER.info("Node "+ candidate.getUUID() + "was cloned successfully to " + clone.getUUID());
+                LOGGER.info("Node " + candidate.getUUID() + "was cloned successfully to " + clone.getUUID());
             }
         });
         return result;

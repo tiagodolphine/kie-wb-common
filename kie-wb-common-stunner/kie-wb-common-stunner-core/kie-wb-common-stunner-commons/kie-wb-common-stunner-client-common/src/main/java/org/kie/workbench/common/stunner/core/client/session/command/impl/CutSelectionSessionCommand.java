@@ -27,8 +27,7 @@ import org.kie.workbench.common.stunner.core.client.session.command.AbstractClie
 import static org.kie.workbench.common.stunner.core.client.canvas.controls.keyboard.KeysMatcher.doKeysMatch;
 
 /**
- * This session command obtains the selected elements on session and executes a delete operation for each one.
- * It also captures the <code>DELETE</code> keyboard event and fires the delete operation as well.
+ * This session command copy to the clipboard using {@link CopySelectionSessionCommand} selected elements and delete them using the {@link DeleteSelectionSessionCommand}. *
  */
 @Dependent
 public class CutSelectionSessionCommand extends AbstractClientSessionCommand<ClientFullSession> {

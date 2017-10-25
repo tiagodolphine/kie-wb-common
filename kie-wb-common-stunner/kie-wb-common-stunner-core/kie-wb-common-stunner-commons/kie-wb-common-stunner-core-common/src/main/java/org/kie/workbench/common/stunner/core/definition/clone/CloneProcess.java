@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,10 @@
  * limitations under the License.
  */
 
-package org.kie.workbench.common.stunner.core.definition.morph;
+package org.kie.workbench.common.stunner.core.definition.clone;
 
-import org.kie.workbench.common.stunner.core.definition.clone.ClonePolicy;
+public interface CloneProcess {
 
-// TODO: Refactor to #getTargets()
-//      - Bindable impl -> do not use a map, as single class a key is available
-public interface MorphDefinition {
+    <T> T clone (T source);
 
-    boolean accepts(final String definitionId);
-
-    String getBase();
-
-    String getDefault();
-
-    Iterable<String> getTargets(final String definitionId);
-
-    ClonePolicy getPolicy();
 }

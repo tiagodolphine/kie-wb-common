@@ -16,9 +16,7 @@
 
 package org.kie.workbench.common.stunner.core.client.session.command.impl;
 
-import java.util.Objects;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
@@ -32,13 +30,11 @@ import org.kie.workbench.common.stunner.core.client.session.ClientFullSession;
 import org.kie.workbench.common.stunner.core.client.session.command.AbstractClientSessionCommand;
 import org.kie.workbench.common.stunner.core.graph.Element;
 import org.kie.workbench.common.stunner.core.graph.Node;
-import org.kie.workbench.common.stunner.core.graph.content.view.View;
 
 import static org.kie.workbench.common.stunner.core.client.canvas.controls.keyboard.KeysMatcher.doKeysMatch;
 
 /**
- * This session command obtains the selected elements on session and executes a delete operation for each one.
- * It also captures the <code>DELETE</code> keyboard event and fires the delete operation as well.
+ * This session command obtains the selected elements on session and copy the elements to a clipboard.
  */
 @Dependent
 public class CopySelectionSessionCommand extends AbstractClientSessionCommand<ClientFullSession> {

@@ -16,6 +16,7 @@
 
 package org.kie.workbench.common.stunner.core.client.canvas.command;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -32,6 +33,7 @@ import org.kie.workbench.common.stunner.core.graph.command.GraphCommandExecution
 import org.kie.workbench.common.stunner.core.graph.command.impl.UpdateElementPositionCommand;
 import org.kie.workbench.common.stunner.core.graph.content.definition.Definition;
 import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
+import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
 import org.kie.workbench.common.stunner.core.rule.RuleViolation;
 
 public class CloneNodeCommand extends AbstractCanvasGraphCommand {
@@ -59,6 +61,8 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
         return new org.kie.workbench.common.stunner.core.graph.command.impl.CloneNodeCommand(candidate, parentUuid, clone -> {
             //success cloned than create apply it to canvas
             command.addCommand(new CloneCanvasNodeCommand(clone, context.getDiagram().getMetadata().getShapeSetId()));
+            command.addCommand(new SetCanvasChildNodeCommand(GraphUtils.getParent(clone).asNode(), clone));
+
             //update position of cloned node
             cloneLocation.ifPresent(point -> handleClonedNodePosition(context, clone, point));
         });
