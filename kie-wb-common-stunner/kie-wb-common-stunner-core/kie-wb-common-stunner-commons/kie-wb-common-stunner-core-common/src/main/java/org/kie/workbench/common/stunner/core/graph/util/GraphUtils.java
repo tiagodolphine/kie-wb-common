@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
@@ -157,6 +158,11 @@ public class GraphUtils {
                 .findAny()
                 .map(Edge::getSourceNode)
                 .orElse(null);
+    }
+
+    public static String getParentUUID(final Node<?, ? extends Edge> element) {
+        Optional<? extends Element<?>> parent = Optional.ofNullable(getParent(element));
+        return parent.filter(Objects::nonNull).isPresent() ? parent.get().getUUID() : null;
     }
 
     @SuppressWarnings("unchecked")

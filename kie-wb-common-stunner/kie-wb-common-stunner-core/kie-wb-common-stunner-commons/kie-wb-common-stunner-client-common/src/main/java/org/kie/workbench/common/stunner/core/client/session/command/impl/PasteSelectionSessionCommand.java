@@ -16,6 +16,7 @@
 
 package org.kie.workbench.common.stunner.core.client.session.command.impl;
 
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
@@ -40,7 +41,6 @@ import org.kie.workbench.common.stunner.core.command.impl.CompositeCommandImpl.C
 import org.kie.workbench.common.stunner.core.graph.Edge;
 import org.kie.workbench.common.stunner.core.graph.Element;
 import org.kie.workbench.common.stunner.core.graph.Node;
-import org.kie.workbench.common.stunner.core.graph.content.view.BoundsImpl;
 import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
 import org.kie.workbench.common.stunner.core.graph.content.view.View;
 import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
@@ -111,9 +111,9 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
                                                .map(node -> (Node<View<?>, Edge>) node)
                                                .map(node -> {
                                                    //TODO: remove the log
-                                                   String parentUUID = getParentUUID(node);
-                                                   GWT.log("parent "+ parentUUID);
-                                                   return canvasCommandFactory.cloneNode(node, getParentUUID(node), calculateNewLocation(node));
+                                                   AbstractMap.SimpleEntry<String, Point2D> parentWithLocation = getParentUuidWithNewLocation(node);
+                                                   GWT.log("parent " + parentWithLocation.getKey());
+                                                   return canvasCommandFactory.cloneNode(node, parentWithLocation.getKey(), parentWithLocation.getValue());
                                                })
                                                .collect(Collectors.toList()));
 
@@ -125,15 +125,23 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
         }
     }
 
-    private String getParentUUID(Node node) {
+    private AbstractMap.SimpleEntry<String, Point2D> getParentUuidWithNewLocation(Node node) {
         //getting parent if selected
-        Optional<Element> parent = getSelectedParentElement(node);
+        Optional<Element> selectedParent = getSelectedParentElement(node);
+        if (selectedParent.isPresent()) {
+            //initial position
+            return new AbstractMap.SimpleEntry<>(selectedParent.get().getUUID(), new Point2D(0, 0));
+        }
 
-        //getting node parent if none are selected
-        Element parentElement = parent.orElseGet(() -> GraphUtils.getParent(node));
+        //getting node parent if no different parent is selected
+        Element parentElement = GraphUtils.getParent(node);
+        if (Objects.nonNull(parentElement)) {
+            return new AbstractMap.SimpleEntry<>(parentElement.getUUID(),
+                                                 (Objects.isNull(getElement(node.getUUID())) && !Objects.equals(parentElement, getCanvasRootUUID())) ? new Point2D(0, 0) : calculateNewLocation(node));
+        }
 
         //return default parent that is the canvas in case no parent matches
-        return Objects.nonNull(parentElement) ? parentElement.getUUID() : getCanvasRootUUID();
+        return new AbstractMap.SimpleEntry<>(getCanvasRootUUID(), calculateNewLocation(node));
     }
 
     private String getCanvasRootUUID() {
