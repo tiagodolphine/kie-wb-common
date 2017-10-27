@@ -95,7 +95,7 @@ public class CopySelectionSessionCommand extends AbstractClientSessionCommand<Cl
 
                 callback.onSuccess();
             } catch (Exception e) {
-                callback.onError((V) new String("Error on copy operation " + e.getMessage()));
+                callback.onError((V) e);
             }
         }
     }

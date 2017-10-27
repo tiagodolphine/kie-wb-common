@@ -77,8 +77,6 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
     @Override
     @SuppressWarnings("unchecked")
     public CommandResult<RuleViolation> allow(final GraphCommandExecutionContext context) {
-        //TODO: validation
-
         return super.allow(context);
     }
 
@@ -136,6 +134,6 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
 
     @Override
     public CommandResult<RuleViolation> undo(GraphCommandExecutionContext context) {
-        return GraphCommandResultBuilder.SUCCESS;
+        return new SafeDeleteNodeCommand(clone).execute(context);
     }
 }

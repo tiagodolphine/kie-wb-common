@@ -31,4 +31,6 @@ public interface ClipboardControl<E extends Element> {
     ClipboardControl<E> clear();
 
     boolean hasElements();
+
+    String getParent(String uuid);
 }

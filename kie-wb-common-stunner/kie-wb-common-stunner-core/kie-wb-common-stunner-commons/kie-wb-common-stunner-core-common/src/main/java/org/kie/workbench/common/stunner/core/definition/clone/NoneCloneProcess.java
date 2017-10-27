@@ -22,4 +22,9 @@ public class NoneCloneProcess implements CloneProcess {
     public <T> T clone(T source) {
         return source;
     }
+
+    @Override
+    public <S, T> T clone(S source, T target) {
+        return target;
+    }
 }

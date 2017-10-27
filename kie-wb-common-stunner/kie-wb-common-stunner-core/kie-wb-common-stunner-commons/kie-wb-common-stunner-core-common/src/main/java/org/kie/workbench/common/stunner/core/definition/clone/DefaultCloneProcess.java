@@ -36,8 +36,7 @@ public class DefaultCloneProcess extends AbstractCloneProcess {
     }
 
     @Override
-    public <T> T clone(T source) {
-        T target = createEmptyClone(source);
+    public <S, T> T clone(S source, T target) {
         final Object nameProperty = adapterManager.forDefinition().getMetaProperty(PropertyMetaTypes.NAME, source);
         final Object targetNameProperty = adapterManager.forDefinition().getMetaProperty(PropertyMetaTypes.NAME, target);
         final Object namePropertyValue = adapterManager.forProperty().getValue(nameProperty);

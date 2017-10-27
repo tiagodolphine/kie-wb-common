@@ -25,6 +25,7 @@ import javax.inject.Inject;
 
 import org.kie.workbench.common.stunner.core.api.FactoryManager;
 import org.kie.workbench.common.stunner.core.definition.adapter.AdapterManager;
+import org.kie.workbench.common.stunner.core.util.ClassUtils;
 
 @ApplicationScoped
 public class DeepCloneProcess extends AbstractCloneProcess {
@@ -39,10 +40,9 @@ public class DeepCloneProcess extends AbstractCloneProcess {
     }
 
     @Override
-    public <T> T clone(T source) {
+    public <S, T> T clone(S source, T target) {
         //the adapterManager.forDefinition().getProperties return a flattened set of properties (properties of propertySet as well)
         //in this way it could be a conflict with same property IDs, this could be improved by not retuning the flattened properties
-        T target = createEmptyClone(source);
         adapterManager.forDefinition().getProperties(source)
                 .stream()
                 .filter(p -> !adapterManager.forProperty().isReadOnly(p))
@@ -56,11 +56,16 @@ public class DeepCloneProcess extends AbstractCloneProcess {
                     return propertyTarget.isPresent() ? new AbstractMap.SimpleEntry(p, propertyTarget.get()) : null;
                 })
                 .filter(Objects::nonNull)
+                .filter(entry -> isAllowedToClone(adapterManager.forProperty().getValue(entry.getKey())))
                 .forEach(entry -> {
                     Object value = adapterManager.forProperty().getValue(entry.getKey());
                     adapterManager.forProperty().setValue(entry.getValue(), value);
                 });
 
         return target;
+    }
+
+    private boolean isAllowedToClone(Object value) {
+        return (value instanceof String) || (ClassUtils.isPrimitiveClass(value.getClass()));
     }
 }

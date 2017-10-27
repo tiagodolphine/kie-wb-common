@@ -160,11 +160,6 @@ public class GraphUtils {
                 .orElse(null);
     }
 
-    public static String getParentUUID(final Node<?, ? extends Edge> element) {
-        Optional<? extends Element<?>> parent = Optional.ofNullable(getParent(element));
-        return parent.filter(Objects::nonNull).isPresent() ? parent.get().getUUID() : null;
-    }
-
     @SuppressWarnings("unchecked")
     public static Optional<Element<?>> getParentByDefinitionId(final DefinitionManager definitionManager,
                                                                final Node<?, ? extends Edge> candidate,

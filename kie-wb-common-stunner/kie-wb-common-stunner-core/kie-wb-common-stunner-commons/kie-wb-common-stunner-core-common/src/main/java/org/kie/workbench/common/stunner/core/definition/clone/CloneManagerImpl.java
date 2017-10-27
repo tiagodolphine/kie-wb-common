@@ -50,4 +50,9 @@ public class CloneManagerImpl implements CloneManager {
     public <T> T clone(T source, ClonePolicy policy) {
         return cloneProcess(policy).clone(source);
     }
+
+    @Override
+    public <S, T> T clone(S source, T target, ClonePolicy policy) {
+        return cloneProcess(policy).clone(source, target);
+    }
 }

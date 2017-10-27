@@ -21,7 +21,7 @@ import java.util.Objects;
 import org.kie.workbench.common.stunner.core.api.FactoryManager;
 import org.kie.workbench.common.stunner.core.definition.adapter.AdapterManager;
 
-public abstract class AbstractCloneProcess implements CloneProcess{
+public abstract class AbstractCloneProcess implements CloneProcess {
 
     private final FactoryManager factoryManager;
     final AdapterManager adapterManager;
@@ -31,7 +31,12 @@ public abstract class AbstractCloneProcess implements CloneProcess{
         this.adapterManager = adapterManager;
     }
 
-    protected <T> T createEmptyClone(T source) {
+    @Override
+    public <T> T clone(T source) {
+        return clone(source, createEmptyClone(source));
+    }
+
+    private <T> T createEmptyClone(T source) {
         Objects.requireNonNull(source, "Source cannot be null");
         return (T) factoryManager.newDefinition(source.getClass());
     }

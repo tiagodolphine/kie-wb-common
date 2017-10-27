@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
+import org.kie.workbench.common.stunner.core.client.command.CanvasCommand;
 import org.kie.workbench.common.stunner.core.client.command.CanvasViolation;
 import org.kie.workbench.common.stunner.core.command.Command;
 import org.kie.workbench.common.stunner.core.command.CommandResult;
@@ -44,6 +45,7 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
     private final String parentUuid;
     private Optional<Point2D> cloneLocation;
     private transient CompositeCommand<AbstractCanvasHandler, CanvasViolation> command;
+    private transient CanvasCommand undoCommand;
 
     @SuppressWarnings("unchecked")
     public CloneNodeCommand(final Node candidate, String parentUuid, Point2D cloneLocation) {
@@ -62,6 +64,8 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
             //success cloned than create apply it to canvas
             command.addCommand(new CloneCanvasNodeCommand(clone, context.getDiagram().getMetadata().getShapeSetId()));
             command.addCommand(new SetCanvasChildNodeCommand(GraphUtils.getParent(clone).asNode(), clone));
+
+            undoCommand = new DeleteCanvasNodeCommand(clone);
 
             //update position of cloned node
             cloneLocation.ifPresent(point -> handleClonedNodePosition(context, clone, point));
@@ -85,5 +89,10 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
     @Override
     protected Command<AbstractCanvasHandler, CanvasViolation> newCanvasCommand(final AbstractCanvasHandler context) {
         return command;
+    }
+
+    @Override
+    public CommandResult<CanvasViolation> undo(AbstractCanvasHandler context) {
+        return undoCommand.execute(context);
     }
 }

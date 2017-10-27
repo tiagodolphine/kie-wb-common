@@ -20,4 +20,6 @@ public interface CloneProcess {
 
     <T> T clone (T source);
 
+    <S, T> T clone(S source, T target);
+
 }

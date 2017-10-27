@@ -18,6 +18,7 @@ package org.kie.workbench.common.stunner.core.client.session.command;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import elemental2.dom.RadioNodeList;
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
 import org.kie.workbench.common.stunner.core.client.command.CanvasViolation;
 import org.kie.workbench.common.stunner.core.client.service.ClientRuntimeError;
@@ -106,18 +107,16 @@ public abstract class AbstractClientSessionCommand<S extends ClientSession> impl
         return (AbstractCanvasHandler) getSession().getCanvasHandler();
     }
 
-    protected Callback<ClientRuntimeError> newDefaultCallback(String errorMessage) {
-        return new Callback<ClientRuntimeError>() {
+    protected Callback<Throwable> newDefaultCallback(String errorMessage) {
+        return new Callback<Throwable>() {
             @Override
             public void onSuccess() {
                 // Nothing to do.
             }
 
             @Override
-            public void onError(final ClientRuntimeError error) {
-                LOGGER.log(Level.SEVERE,
-                           errorMessage + error.toString(),
-                           error.getThrowable());
+            public void onError(final Throwable error) {
+                LOGGER.log(Level.SEVERE,errorMessage + error.toString());
             }
         };
     }

@@ -16,7 +16,6 @@
 
 package org.kie.workbench.common.stunner.core.client.session.command.impl;
 
-import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
@@ -110,10 +109,8 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
                                                .filter(Objects::nonNull)
                                                .map(node -> (Node<View<?>, Edge>) node)
                                                .map(node -> {
-                                                   //TODO: remove the log
-                                                   AbstractMap.SimpleEntry<String, Point2D> parentWithLocation = getParentUuidWithNewLocation(node);
-                                                   GWT.log("parent " + parentWithLocation.getKey());
-                                                   return canvasCommandFactory.cloneNode(node, parentWithLocation.getKey(), parentWithLocation.getValue());
+                                                   String newParentUUID = getNewParentUUID(node);
+                                                   return canvasCommandFactory.cloneNode(node, newParentUUID, calculateNewLocation(node, newParentUUID));
                                                })
                                                .collect(Collectors.toList()));
 
@@ -125,23 +122,25 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
         }
     }
 
-    private AbstractMap.SimpleEntry<String, Point2D> getParentUuidWithNewLocation(Node node) {
+    private String getNewParentUUID(Node node) {
         //getting parent if selected
         Optional<Element> selectedParent = getSelectedParentElement(node);
-        if (selectedParent.isPresent()) {
-            //initial position
-            return new AbstractMap.SimpleEntry<>(selectedParent.get().getUUID(), new Point2D(0, 0));
+        if (selectedParent.isPresent() && checkIfExistsOnCanvas(selectedParent.get().getUUID())) {
+            return selectedParent.get().getUUID();
         }
 
         //getting node parent if no different parent is selected
-        Element parentElement = GraphUtils.getParent(node);
-        if (Objects.nonNull(parentElement)) {
-            return new AbstractMap.SimpleEntry<>(parentElement.getUUID(),
-                                                 (Objects.isNull(getElement(node.getUUID())) && !Objects.equals(parentElement, getCanvasRootUUID())) ? new Point2D(0, 0) : calculateNewLocation(node));
+        String nodeParentUUID = clipboardControl.getParent(node.getUUID());
+        if (Objects.nonNull(nodeParentUUID) && checkIfExistsOnCanvas(nodeParentUUID)) {
+            return nodeParentUUID;
         }
 
         //return default parent that is the canvas in case no parent matches
-        return new AbstractMap.SimpleEntry<>(getCanvasRootUUID(), calculateNewLocation(node));
+        return getCanvasRootUUID();
+    }
+
+    private boolean checkIfExistsOnCanvas(String nodeParentUUID) {
+        return Objects.nonNull(getElement(nodeParentUUID));
     }
 
     private String getCanvasRootUUID() {
@@ -162,8 +161,28 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
         return Optional.empty();
     }
 
-    private Point2D calculateNewLocation(final Node<? extends View<?>, Edge> node) {
+    private Point2D calculateNewLocation(final Node<? extends View<?>, Edge> node, String newParentUUID) {
         Point2D position = GraphUtils.getPosition(node.getContent());
-        return new Point2D(position.getX() + 15, position.getY() + 15);
+
+        //new parent different from the source node
+        if (hasParentChanged(node, newParentUUID)) {
+            return new Point2D(0, 0);
+        }
+
+        //node is still on canvas (not deleted)
+        if (existsOnCanvas(node)) {
+            return new Point2D(position.getX() + 15, position.getY() + 15);
+        }
+
+        //default or node was deleted
+        return position;
+    }
+
+    private boolean hasParentChanged(Node<? extends View<?>, Edge> node, String newParentUUID) {
+        return !Objects.equals(clipboardControl.getParent(node.getUUID()), newParentUUID);
+    }
+
+    private boolean existsOnCanvas(Node<? extends View<?>, Edge> node) {
+        return Objects.nonNull(getCanvasHandler().getGraphIndex().getNode(node.getUUID()));
     }
 }
