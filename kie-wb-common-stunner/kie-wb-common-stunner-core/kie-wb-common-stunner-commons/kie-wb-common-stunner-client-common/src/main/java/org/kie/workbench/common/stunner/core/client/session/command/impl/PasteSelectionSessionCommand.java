@@ -27,7 +27,9 @@ import javax.inject.Inject;
 
 import com.google.gwt.core.client.GWT;
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
+import org.kie.workbench.common.stunner.core.client.canvas.CanvasHandler;
 import org.kie.workbench.common.stunner.core.client.canvas.controls.clipboard.ClipboardControl;
+import org.kie.workbench.common.stunner.core.client.canvas.util.CanvasLayoutUtils;
 import org.kie.workbench.common.stunner.core.client.command.CanvasCommandFactory;
 import org.kie.workbench.common.stunner.core.client.command.CanvasViolation;
 import org.kie.workbench.common.stunner.core.client.command.SessionCommandManager;
@@ -53,26 +55,28 @@ import static org.kie.workbench.common.stunner.core.client.canvas.controls.keybo
 @Dependent
 public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<ClientFullSession> {
 
+    public static final int DEFAULT_PADDING = 15;
     private static Logger LOGGER = Logger.getLogger(PasteSelectionSessionCommand.class.getName());
 
     private final SessionCommandManager<AbstractCanvasHandler> sessionCommandManager;
     private final CanvasCommandFactory<AbstractCanvasHandler> canvasCommandFactory;
     private final ClipboardControl<Element> clipboardControl;
+    private final CanvasLayoutUtils canvasLayoutUtils;
 
     protected PasteSelectionSessionCommand() {
-        this(null,
-             null,
-             null);
+        this(null,null,null,null);
     }
 
     @Inject
     public PasteSelectionSessionCommand(final @Session SessionCommandManager<AbstractCanvasHandler> sessionCommandManager,
                                         final CanvasCommandFactory<AbstractCanvasHandler> canvasCommandFactory,
-                                        final ClipboardControl<Element> clipboardControl) {
+                                        final ClipboardControl<Element> clipboardControl,
+                                        final CanvasLayoutUtils canvasLayoutUtils) {
         super(true);
         this.sessionCommandManager = sessionCommandManager;
         this.canvasCommandFactory = canvasCommandFactory;
         this.clipboardControl = clipboardControl;
+        this.canvasLayoutUtils = canvasLayoutUtils;
 
         GWT.log("PasteSelectionSessionCommand");
     }
@@ -125,13 +129,13 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
     private String getNewParentUUID(Node node) {
         //getting parent if selected
         Optional<Element> selectedParent = getSelectedParentElement(node);
-        if (selectedParent.isPresent() && checkIfExistsOnCanvas(selectedParent.get().getUUID())) {
+        if (selectedParent.isPresent() && !Objects.equals(selectedParent.get().getUUID(), node.getUUID()) && checkIfExistsOnCanvas(selectedParent.get().getUUID())) {
             return selectedParent.get().getUUID();
         }
 
         //getting node parent if no different parent is selected
         String nodeParentUUID = clipboardControl.getParent(node.getUUID());
-        if (Objects.nonNull(nodeParentUUID) && checkIfExistsOnCanvas(nodeParentUUID)) {
+        if (selectedParent.isPresent() && Objects.equals(selectedParent.get().getUUID(), node.getUUID()) && Objects.nonNull(nodeParentUUID) && checkIfExistsOnCanvas(nodeParentUUID)) {
             return nodeParentUUID;
         }
 
@@ -153,9 +157,7 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
             if (Objects.nonNull(selectedItems) && !selectedItems.isEmpty()) {
                 GWT.log(selectedItems.toString());
                 String selectedUUID = selectedItems.stream().filter(Objects::nonNull).findFirst().orElse(null);
-                return (Objects.equals(selectedUUID, node.getUUID()) ?
-                        Optional.empty() :
-                        Optional.ofNullable(getElement(selectedUUID)));
+                return Optional.ofNullable(getElement(selectedUUID));
             }
         }
         return Optional.empty();
@@ -166,12 +168,11 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
 
         //new parent different from the source node
         if (hasParentChanged(node, newParentUUID)) {
-            return new Point2D(0, 0);
-        }
+            return new Point2D(DEFAULT_PADDING, DEFAULT_PADDING);        }
 
         //node is still on canvas (not deleted)
         if (existsOnCanvas(node)) {
-            return new Point2D(position.getX() + 15, position.getY() + 15);
+            return new Point2D(position.getX() + DEFAULT_PADDING, position.getY() + DEFAULT_PADDING);
         }
 
         //default or node was deleted

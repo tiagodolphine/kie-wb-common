@@ -21,9 +21,9 @@ import org.kie.workbench.common.stunner.core.graph.Node;
 /**
  * Clone a node shape into de canvas.
  */
-public class CloneCanvasNodeCommand extends AddCanvasNodeCommand {
+public class CloneCanvasNodeCommand extends AddCanvasChildNodeCommand {
 
-    public CloneCanvasNodeCommand(Node candidate, String shapeSetId) {
-        super(candidate, shapeSetId);
+    public CloneCanvasNodeCommand(Node parent, Node candidate, String shapeSetId) {
+        super(parent,candidate, shapeSetId);
     }
 }

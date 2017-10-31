@@ -18,10 +18,12 @@ package org.kie.workbench.common.stunner.core.graph.command.impl;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import com.google.gwt.core.client.GWT;
 import org.jboss.errai.common.client.api.annotations.MapsTo;
 import org.jboss.errai.common.client.api.annotations.NonPortable;
 import org.jboss.errai.common.client.api.annotations.Portable;
 import org.kie.soup.commons.validation.PortablePreconditions;
+import org.kie.workbench.common.stunner.core.command.Command;
 import org.kie.workbench.common.stunner.core.command.CommandResult;
 import org.kie.workbench.common.stunner.core.command.impl.AbstractCompositeCommand;
 import org.kie.workbench.common.stunner.core.command.util.CommandUtils;
@@ -30,8 +32,8 @@ import org.kie.workbench.common.stunner.core.graph.Edge;
 import org.kie.workbench.common.stunner.core.graph.Element;
 import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.command.GraphCommandExecutionContext;
-import org.kie.workbench.common.stunner.core.graph.command.GraphCommandResultBuilder;
 import org.kie.workbench.common.stunner.core.graph.content.definition.Definition;
+import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
 import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
 import org.kie.workbench.common.stunner.core.rule.RuleViolation;
 import org.kie.workbench.common.stunner.core.util.UUID;
@@ -44,6 +46,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
 
     private final Node<Definition, Edge> candidate;
     private final Optional<String> parentUuidOptional;
+    private final Point2D position;
     private Node<Definition, Edge> clone;
     private Optional<CloneNodeCommandCallback> callbackOptional;
 
@@ -60,18 +63,19 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
     }
 
     protected CloneNodeCommand() {
-        this(null, null);
+        this(null, null, null, null);
     }
 
     public CloneNodeCommand(final @MapsTo("candidate") Node candidate, final @MapsTo("parentUuid") String parentUuid) {
         this(PortablePreconditions.checkNotNull("candidate", candidate),
-             PortablePreconditions.checkNotNull("parentUuid", parentUuid), null);
+             PortablePreconditions.checkNotNull("parentUuid", parentUuid), null, null);
     }
 
-    public CloneNodeCommand(final Node candidate, final String parentUuid, final CloneNodeCommandCallback callback) {
+    public CloneNodeCommand(final Node candidate, final String parentUuid, final CloneNodeCommandCallback callback, final Point2D position) {
         this.candidate = candidate;
         this.parentUuidOptional = Optional.ofNullable(parentUuid);
         this.callbackOptional = Optional.ofNullable(callback);
+        this.position = position;
     }
 
     @Override
@@ -88,6 +92,12 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
     @Override
     protected AbstractCompositeCommand<GraphCommandExecutionContext, RuleViolation> initialize(GraphCommandExecutionContext context) {
 
+        //getting the node parent
+        Optional<String> parentUUID = getParentUUID();
+        if (!parentUUID.isPresent()) {
+            throw new IllegalStateException("Parent not found for node " + candidate);
+        }
+
         final Object bean = candidate.getContent().getDefinition();
         clone = (Node<Definition, Edge>) context.getFactoryManager().newElement(UUID.uuid(), bean.getClass()).asNode();
 
@@ -95,17 +105,18 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
         Object clonedDefinition = context.getDefinitionManager().cloneManager().clone(candidate.getContent().getDefinition(), ClonePolicy.ALL);
         clone.getContent().setDefinition(clonedDefinition);
 
-        //setting the node parent
-        Optional<String> parentUUID = getParentUUID();
-        if (!parentUUID.isPresent()) {
-            throw new IllegalStateException("Parent not found for clone node " + clone);
-        }
-
         //creating node commands to be executed
         addCommand(new RegisterNodeCommand(clone));
-        addCommand(new AddChildNodeCommand(parentUUID.get(), clone, null, null));
+        addCommand(new AddChildNodeCommand(parentUUID.get(), clone, position.getX(), position.getY()));
 
         return this;
+    }
+
+    @Override
+    protected CommandResult<RuleViolation> doExecute(GraphCommandExecutionContext context, Command<GraphCommandExecutionContext, RuleViolation> command) {
+        GWT.log("run canvas clone "+ candidate.getUUID());
+
+        return super.doExecute(context, command);
     }
 
     private Optional<String> getParentUUID() {
@@ -134,6 +145,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
 
     @Override
     public CommandResult<RuleViolation> undo(GraphCommandExecutionContext context) {
-        return new SafeDeleteNodeCommand(clone).execute(context);
+        //return new SafeDeleteNodeCommand(clone).execute(context);
+        return super.undo(context);
     }
 }

@@ -19,11 +19,16 @@ package org.kie.workbench.common.stunner.core.util;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+import javax.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
 public class ClassUtils {
 
-    private final static Map WRAPPER_MAP = new HashMap();
+    private final Map<Class<?>, Class<?>> WRAPPER_MAP = new HashMap<>();
 
-    {
+    @PostConstruct
+    private void init() {
         WRAPPER_MAP.put(Boolean.class, Boolean.TYPE);
         WRAPPER_MAP.put(Byte.class, Byte.TYPE);
         WRAPPER_MAP.put(Character.class, Character.TYPE);
@@ -35,7 +40,7 @@ public class ClassUtils {
         WRAPPER_MAP.put(Void.class, Void.TYPE);
     }
 
-    public static boolean isPrimitiveClass(Class<?> type) {
+    public boolean isPrimitiveClass(Class<?> type) {
         return type.isPrimitive() || WRAPPER_MAP.containsKey(type);
     }
 }

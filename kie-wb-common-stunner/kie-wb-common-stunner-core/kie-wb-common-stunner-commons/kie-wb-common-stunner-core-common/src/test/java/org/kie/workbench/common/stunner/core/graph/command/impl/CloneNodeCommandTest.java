@@ -68,7 +68,7 @@ public class CloneNodeCommandTest extends AbstractGraphCommandTest{
         when(definitionAdapter.getId(definition)).thenReturn(NODE_DEF_ID);
         when(cloneElement.asNode()).thenReturn(clone);
 
-        this.cloneNodeCommand = new CloneNodeCommand(candidate, null);
+        this.cloneNodeCommand = new CloneNodeCommand(candidate, null, null, null);
     }
 
     @Test

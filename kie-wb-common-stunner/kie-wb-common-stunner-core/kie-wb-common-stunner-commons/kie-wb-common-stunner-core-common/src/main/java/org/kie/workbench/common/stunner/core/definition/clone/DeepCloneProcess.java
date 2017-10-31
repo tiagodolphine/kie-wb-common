@@ -30,13 +30,16 @@ import org.kie.workbench.common.stunner.core.util.ClassUtils;
 @ApplicationScoped
 public class DeepCloneProcess extends AbstractCloneProcess {
 
+    private final ClassUtils classUtils;
+
     protected DeepCloneProcess() {
-        this(null, null);
+        this(null, null, null);
     }
 
     @Inject
-    public DeepCloneProcess(FactoryManager factoryManager, AdapterManager adapterManager) {
+    public DeepCloneProcess(final FactoryManager factoryManager, final AdapterManager adapterManager, final ClassUtils classUtils) {
         super(factoryManager, adapterManager);
+        this.classUtils = classUtils;
     }
 
     @Override
@@ -66,6 +69,6 @@ public class DeepCloneProcess extends AbstractCloneProcess {
     }
 
     private boolean isAllowedToClone(Object value) {
-        return (value instanceof String) || (ClassUtils.isPrimitiveClass(value.getClass()));
+        return (value instanceof String) || (classUtils.isPrimitiveClass(value.getClass()));
     }
 }
