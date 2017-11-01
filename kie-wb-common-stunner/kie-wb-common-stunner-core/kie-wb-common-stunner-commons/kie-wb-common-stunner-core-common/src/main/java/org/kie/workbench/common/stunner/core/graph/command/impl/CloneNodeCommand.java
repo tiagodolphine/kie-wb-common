@@ -15,8 +15,16 @@
  */
 package org.kie.workbench.common.stunner.core.graph.command.impl;
 
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import com.google.gwt.core.client.GWT;
 import org.jboss.errai.common.client.api.annotations.MapsTo;
@@ -30,10 +38,20 @@ import org.kie.workbench.common.stunner.core.command.util.CommandUtils;
 import org.kie.workbench.common.stunner.core.definition.clone.ClonePolicy;
 import org.kie.workbench.common.stunner.core.graph.Edge;
 import org.kie.workbench.common.stunner.core.graph.Element;
+import org.kie.workbench.common.stunner.core.graph.Graph;
 import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.command.GraphCommandExecutionContext;
+import org.kie.workbench.common.stunner.core.graph.command.GraphCommandResultBuilder;
 import org.kie.workbench.common.stunner.core.graph.content.definition.Definition;
+import org.kie.workbench.common.stunner.core.graph.content.relationship.Child;
+import org.kie.workbench.common.stunner.core.graph.content.view.Connection;
+import org.kie.workbench.common.stunner.core.graph.content.view.MagnetConnection;
 import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
+import org.kie.workbench.common.stunner.core.graph.content.view.View;
+import org.kie.workbench.common.stunner.core.graph.content.view.ViewConnector;
+import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.AbstractChildrenTraverseCallback;
+import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.ChildrenTraverseProcessorImpl;
+import org.kie.workbench.common.stunner.core.graph.processing.traverse.tree.TreeWalkTraverseProcessorImpl;
 import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
 import org.kie.workbench.common.stunner.core.rule.RuleViolation;
 import org.kie.workbench.common.stunner.core.util.UUID;
@@ -47,7 +65,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
     private final Node<Definition, Edge> candidate;
     private final Optional<String> parentUuidOptional;
     private final Point2D position;
-    private Node<Definition, Edge> clone;
+    private Node<View, Edge> clone;
     private Optional<CloneNodeCommandCallback> callbackOptional;
 
     private static Logger LOGGER = Logger.getLogger(CloneNodeCommand.class.getName());
@@ -59,7 +77,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
     @NonPortable
     public interface CloneNodeCommandCallback {
 
-        void cloned(Node<Definition, Edge> candidate);
+        void cloned(Node<View, Edge> candidate);
     }
 
     protected CloneNodeCommand() {
@@ -91,7 +109,6 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
 
     @Override
     protected AbstractCompositeCommand<GraphCommandExecutionContext, RuleViolation> initialize(GraphCommandExecutionContext context) {
-
         //getting the node parent
         Optional<String> parentUUID = getParentUUID();
         if (!parentUUID.isPresent()) {
@@ -99,7 +116,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
         }
 
         final Object bean = candidate.getContent().getDefinition();
-        clone = (Node<Definition, Edge>) context.getFactoryManager().newElement(UUID.uuid(), bean.getClass()).asNode();
+        clone = (Node<View, Edge>) context.getFactoryManager().newElement(UUID.uuid(), bean.getClass()).asNode();
 
         //Cloning the node content with properties
         Object clonedDefinition = context.getDefinitionManager().cloneManager().clone(candidate.getContent().getDefinition(), ClonePolicy.ALL);
@@ -113,8 +130,71 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
     }
 
     @Override
+    public CommandResult<RuleViolation> execute(final GraphCommandExecutionContext context) {
+
+        CommandResult<RuleViolation> result = super.execute(context);
+        callbackOptional.ifPresent(callback -> {
+            if (!CommandUtils.isError(result)) {
+                callback.cloned(clone);
+                LOGGER.info("Node " + candidate.getUUID() + "was cloned successfully to " + clone.getUUID());
+            }
+        });
+
+        //Tree handle
+        //is a container
+        final List<Command<GraphCommandExecutionContext, RuleViolation>> commands = new LinkedList<>();
+        final Map<String, Node<View, Edge>> cloneNodeMapUUID = new HashMap<>();
+
+        if (GraphUtils.hasChildren(candidate)) {
+
+            final Graph graph = getGraph(context);
+            new ChildrenTraverseProcessorImpl(new TreeWalkTraverseProcessorImpl())
+                    .setRootUUID(candidate.getUUID())
+                    .traverse(graph, new AbstractChildrenTraverseCallback<Node<View, Edge>, Edge<Child, Node>>() {
+                        @Override
+                        public boolean startNodeTraversal(final List<Node<View, Edge>> parents,
+                                                          final Node<View, Edge> node) {
+                            super.startNodeTraversal(parents,
+                                                     node);
+
+                            GWT.log("startNodeTraversal-LIST " + node.getUUID());
+
+                            //clone node
+                            commands.add(new CloneNodeCommand(node, clone.getUUID(), cloneCallback -> {
+                                GWT.log("child cloned !!!" + cloneCallback.getUUID());
+                                cloneNodeMapUUID.put(node.getUUID(), cloneCallback);
+                            }, GraphUtils.getPosition(node.getContent())));
+
+                            return true;
+                        }
+                    });
+        }
+
+        List<CommandResult<RuleViolation>> commandResults = commands.stream().map(c -> c.execute(context)).collect(Collectors.toList());
+        commands.clear();
+
+        //clone connectors
+        //get connector from source node
+        //map to cloned node
+        cloneNodeMapUUID.keySet().stream()
+                .flatMap(sourceUUID -> getNode(context, sourceUUID).getOutEdges().stream())
+                .forEach(edge -> commands.add(new CloneConnectorCommand(edge,
+                                                                        cloneNodeMapUUID.get(edge.getSourceNode().getUUID()).getUUID(),
+                                                                        cloneNodeMapUUID.get(edge.getTargetNode().getUUID()).getUUID())));
+
+        commandResults.addAll(commands.stream().map(c -> c.execute(context)).collect(Collectors.toList()));
+
+        commandResults.add(result);
+
+        return new GraphCommandResultBuilder(commandResults
+                                                     .stream()
+                                                     .flatMap(r -> StreamSupport.stream(r.getViolations().spliterator(), false))
+                                                     .collect(Collectors.toList())).build();
+    }
+
+    @Override
     protected CommandResult<RuleViolation> doExecute(GraphCommandExecutionContext context, Command<GraphCommandExecutionContext, RuleViolation> command) {
-        GWT.log("run canvas clone "+ candidate.getUUID());
+        GWT.log("run canvas clone " + candidate.getUUID());
 
         return super.doExecute(context, command);
     }
@@ -129,18 +209,6 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
             return Optional.of(parent.get().getUUID());
         }
         return Optional.empty();
-    }
-
-    @Override
-    public CommandResult<RuleViolation> execute(GraphCommandExecutionContext context) {
-        CommandResult<RuleViolation> result = super.execute(context);
-        callbackOptional.ifPresent(callback -> {
-            if (!CommandUtils.isError(result)) {
-                callback.cloned(clone);
-                LOGGER.info("Node " + candidate.getUUID() + "was cloned successfully to " + clone.getUUID());
-            }
-        });
-        return result;
     }
 
     @Override

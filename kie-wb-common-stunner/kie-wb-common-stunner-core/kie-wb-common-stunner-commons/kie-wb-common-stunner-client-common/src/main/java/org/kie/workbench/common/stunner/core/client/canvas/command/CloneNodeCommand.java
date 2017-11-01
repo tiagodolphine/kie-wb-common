@@ -16,24 +16,16 @@
 
 package org.kie.workbench.common.stunner.core.client.canvas.command;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import com.google.gwt.core.client.GWT;
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
-import org.kie.workbench.common.stunner.core.client.command.CanvasCommand;
 import org.kie.workbench.common.stunner.core.client.command.CanvasViolation;
 import org.kie.workbench.common.stunner.core.command.Command;
-import org.kie.workbench.common.stunner.core.command.CommandResult;
 import org.kie.workbench.common.stunner.core.command.CompositeCommand;
 import org.kie.workbench.common.stunner.core.command.impl.CompositeCommandImpl;
-import org.kie.workbench.common.stunner.core.command.util.CommandUtils;
-import org.kie.workbench.common.stunner.core.graph.Edge;
 import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.command.GraphCommandExecutionContext;
-import org.kie.workbench.common.stunner.core.graph.command.impl.UpdateElementPositionCommand;
-import org.kie.workbench.common.stunner.core.graph.content.definition.Definition;
 import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
 import org.kie.workbench.common.stunner.core.graph.content.view.View;
 import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
@@ -61,15 +53,25 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
     @Override
     @SuppressWarnings("unchecked")
     protected Command<GraphCommandExecutionContext, RuleViolation> newGraphCommand(final AbstractCanvasHandler context) {
-        return new org.kie.workbench.common.stunner.core.graph.command.impl.CloneNodeCommand(candidate, parentUuid, clone ->
-                command.addCommand(new CloneCanvasNodeCommand(GraphUtils.getParent(clone).asNode(),
-                                                              clone,
-                                                              context.getDiagram().getMetadata().getShapeSetId()))
-                , cloneLocation.orElseGet(() -> GraphUtils.getPosition((View) candidate.getContent())));
+        return new org.kie.workbench.common.stunner.core.graph.command.impl.CloneNodeCommand(candidate,
+                                                                                             parentUuid,
+                                                                                             cloneNodeCallback(context),
+                                                                                             getClonePosition());
     }
 
     @Override
     protected Command<AbstractCanvasHandler, CanvasViolation> newCanvasCommand(final AbstractCanvasHandler context) {
         return command;
+    }
+
+    private Point2D getClonePosition() {
+        return cloneLocation.orElseGet(() -> GraphUtils.getPosition((View) candidate.getContent()));
+    }
+
+    private org.kie.workbench.common.stunner.core.graph.command.impl.CloneNodeCommand.CloneNodeCommandCallback cloneNodeCallback(AbstractCanvasHandler context) {
+        return clone -> command.addCommand(
+                new CloneCanvasNodeCommand(GraphUtils.getParent(clone).asNode(),
+                                           clone,
+                                           context.getDiagram().getMetadata().getShapeSetId()));
     }
 }
