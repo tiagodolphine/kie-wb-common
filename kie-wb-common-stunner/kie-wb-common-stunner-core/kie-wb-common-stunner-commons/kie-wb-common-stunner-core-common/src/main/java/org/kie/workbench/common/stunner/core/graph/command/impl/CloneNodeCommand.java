@@ -15,15 +15,15 @@
  */
 package org.kie.workbench.common.stunner.core.graph.command.impl;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.google.gwt.core.client.GWT;
@@ -38,18 +38,14 @@ import org.kie.workbench.common.stunner.core.command.util.CommandUtils;
 import org.kie.workbench.common.stunner.core.definition.clone.ClonePolicy;
 import org.kie.workbench.common.stunner.core.graph.Edge;
 import org.kie.workbench.common.stunner.core.graph.Element;
-import org.kie.workbench.common.stunner.core.graph.Graph;
 import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.command.GraphCommandExecutionContext;
 import org.kie.workbench.common.stunner.core.graph.command.GraphCommandResultBuilder;
 import org.kie.workbench.common.stunner.core.graph.content.definition.Definition;
-import org.kie.workbench.common.stunner.core.graph.content.relationship.Child;
-import org.kie.workbench.common.stunner.core.graph.content.view.Connection;
-import org.kie.workbench.common.stunner.core.graph.content.view.MagnetConnection;
 import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
 import org.kie.workbench.common.stunner.core.graph.content.view.View;
-import org.kie.workbench.common.stunner.core.graph.content.view.ViewConnector;
-import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.AbstractChildrenTraverseCallback;
+import org.kie.workbench.common.stunner.core.graph.processing.traverse.consumer.ChildrenTransverseConsumerImpl;
+import org.kie.workbench.common.stunner.core.graph.processing.traverse.consumer.ChildrenTraverseConsumer;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.ChildrenTraverseProcessorImpl;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.tree.TreeWalkTraverseProcessorImpl;
 import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
@@ -67,6 +63,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
     private final Point2D position;
     private Node<View, Edge> clone;
     private Optional<CloneNodeCommandCallback> callbackOptional;
+    private transient ChildrenTraverseConsumer childrenTraverseConsumer;
 
     private static Logger LOGGER = Logger.getLogger(CloneNodeCommand.class.getName());
 
@@ -94,6 +91,8 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
         this.parentUuidOptional = Optional.ofNullable(parentUuid);
         this.callbackOptional = Optional.ofNullable(callback);
         this.position = position;
+        this.childrenTraverseConsumer =
+                new ChildrenTransverseConsumerImpl(new ChildrenTraverseProcessorImpl(new TreeWalkTraverseProcessorImpl()));
     }
 
     @Override
@@ -131,65 +130,51 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
 
     @Override
     public CommandResult<RuleViolation> execute(final GraphCommandExecutionContext context) {
-
         CommandResult<RuleViolation> result = super.execute(context);
+        if (CommandUtils.isError(result)) {
+            return result;
+        }
+
+        List<CommandResult<RuleViolation>> commandResults = new ArrayList<>();
+        commandResults.add(result);
+
+        //Handling children
+        final List<Command<GraphCommandExecutionContext, RuleViolation>> childrenCommands = new LinkedList<>();
+        final Map<String, Node<View, Edge>> cloneNodeMapUUID = new HashMap<>();
+
+        childrenTraverseConsumer.consume(getGraph(context), candidate, node -> {
+            //clone node
+            childrenCommands.add(new CloneNodeCommand(node, clone.getUUID(), cloneCallback -> {
+                GWT.log("child cloned !!!" + cloneCallback.getUUID());
+                cloneNodeMapUUID.put(node.getUUID(), cloneCallback);
+            }, GraphUtils.getPosition((View) node.getContent())));
+        });
+
+        commandResults.addAll(childrenCommands.stream().map(c -> c.execute(context)).collect(Collectors.toList()));
+        childrenCommands.clear();
+
+        //Handling connectors
+        //get connector from source node and map to cloned node
+        cloneNodeMapUUID.keySet().stream()
+                .flatMap(sourceUUID -> getNode(context, sourceUUID).getOutEdges().stream())
+                .forEach(edge -> childrenCommands.add(new CloneConnectorCommand(edge,
+                                                                                cloneNodeMapUUID.get(edge.getSourceNode().getUUID()).getUUID(),
+                                                                                cloneNodeMapUUID.get(edge.getTargetNode().getUUID()).getUUID())));
+
+        commandResults.addAll(childrenCommands.stream().map(c -> c.execute(context)).collect(Collectors.toList()));
+        commandResults.add(result);
+
+        CommandResult<RuleViolation> finalResult = new GraphCommandResultBuilder(commandResults
+                                                                                         .stream()
+                                                                                         .flatMap(r -> StreamSupport.stream(r.getViolations().spliterator(), false))
+                                                                                         .collect(Collectors.toList())).build();
         callbackOptional.ifPresent(callback -> {
-            if (!CommandUtils.isError(result)) {
+            if (!CommandUtils.isError(finalResult)) {
                 callback.cloned(clone);
                 LOGGER.info("Node " + candidate.getUUID() + "was cloned successfully to " + clone.getUUID());
             }
         });
-
-        //Tree handle
-        //is a container
-        final List<Command<GraphCommandExecutionContext, RuleViolation>> commands = new LinkedList<>();
-        final Map<String, Node<View, Edge>> cloneNodeMapUUID = new HashMap<>();
-
-        if (GraphUtils.hasChildren(candidate)) {
-
-            final Graph graph = getGraph(context);
-            new ChildrenTraverseProcessorImpl(new TreeWalkTraverseProcessorImpl())
-                    .setRootUUID(candidate.getUUID())
-                    .traverse(graph, new AbstractChildrenTraverseCallback<Node<View, Edge>, Edge<Child, Node>>() {
-                        @Override
-                        public boolean startNodeTraversal(final List<Node<View, Edge>> parents,
-                                                          final Node<View, Edge> node) {
-                            super.startNodeTraversal(parents,
-                                                     node);
-
-                            GWT.log("startNodeTraversal-LIST " + node.getUUID());
-
-                            //clone node
-                            commands.add(new CloneNodeCommand(node, clone.getUUID(), cloneCallback -> {
-                                GWT.log("child cloned !!!" + cloneCallback.getUUID());
-                                cloneNodeMapUUID.put(node.getUUID(), cloneCallback);
-                            }, GraphUtils.getPosition(node.getContent())));
-
-                            return true;
-                        }
-                    });
-        }
-
-        List<CommandResult<RuleViolation>> commandResults = commands.stream().map(c -> c.execute(context)).collect(Collectors.toList());
-        commands.clear();
-
-        //clone connectors
-        //get connector from source node
-        //map to cloned node
-        cloneNodeMapUUID.keySet().stream()
-                .flatMap(sourceUUID -> getNode(context, sourceUUID).getOutEdges().stream())
-                .forEach(edge -> commands.add(new CloneConnectorCommand(edge,
-                                                                        cloneNodeMapUUID.get(edge.getSourceNode().getUUID()).getUUID(),
-                                                                        cloneNodeMapUUID.get(edge.getTargetNode().getUUID()).getUUID())));
-
-        commandResults.addAll(commands.stream().map(c -> c.execute(context)).collect(Collectors.toList()));
-
-        commandResults.add(result);
-
-        return new GraphCommandResultBuilder(commandResults
-                                                     .stream()
-                                                     .flatMap(r -> StreamSupport.stream(r.getViolations().spliterator(), false))
-                                                     .collect(Collectors.toList())).build();
+        return finalResult;
     }
 
     @Override
@@ -213,7 +198,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
 
     @Override
     public CommandResult<RuleViolation> undo(GraphCommandExecutionContext context) {
-        //return new SafeDeleteNodeCommand(clone).execute(context);
-        return super.undo(context);
+        return new SafeDeleteNodeCommand(clone).execute(context);
+        //return super.undo(context);
     }
 }

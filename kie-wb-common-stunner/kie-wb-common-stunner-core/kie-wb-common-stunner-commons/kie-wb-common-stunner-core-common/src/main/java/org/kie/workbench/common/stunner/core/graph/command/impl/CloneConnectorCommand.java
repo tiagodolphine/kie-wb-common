@@ -18,7 +18,6 @@ package org.kie.workbench.common.stunner.core.graph.command.impl;
 import org.jboss.errai.common.client.api.annotations.Portable;
 import org.kie.soup.commons.validation.PortablePreconditions;
 import org.kie.workbench.common.stunner.core.command.CommandResult;
-import org.kie.workbench.common.stunner.core.command.util.CommandUtils;
 import org.kie.workbench.common.stunner.core.definition.clone.ClonePolicy;
 import org.kie.workbench.common.stunner.core.graph.Edge;
 import org.kie.workbench.common.stunner.core.graph.Node;
@@ -81,51 +80,15 @@ public final class CloneConnectorCommand extends AbstractGraphCompositeCommand {
         commands.add(new AddConnectorCommand(sourceNode, clone, sourceConnection));
         commands.add(new SetConnectionTargetNodeCommand(targetNode, clone, targetConnection));
 
+        // Add the candidate into index, so child commands can find it.
+        getMutableIndex(context).addEdge(clone);
         return this;
-    }
-
-    @Override
-    public CommandResult<RuleViolation> allow(final GraphCommandExecutionContext context) {
-        // Add the candidate into index, so child commands can find it.
-        getMutableIndex(context).addEdge(candidate);
-        final CommandResult<RuleViolation> results = super.allow(context);
-        if (CommandUtils.isError(results)) {
-            // Remove the transient candidate after the error.
-            getMutableIndex(context).removeEdge(candidate);
-        }
-        return results;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public CommandResult<RuleViolation> execute(final GraphCommandExecutionContext context) {
-        // Add the candidate into index, so child commands can find it.
-        getMutableIndex(context).addEdge(candidate);
-        final CommandResult<RuleViolation> results = super.execute(context);
-        if (CommandUtils.isError(results)) {
-            // Remove the transient candidate after the error.
-            getMutableIndex(context).removeEdge(candidate);
-        }
-        return results;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public CommandResult<RuleViolation> undo(final GraphCommandExecutionContext context) {
-        final DeleteConnectorCommand undoCommand = new DeleteConnectorCommand(candidate);
-        return undoCommand.execute(context);
-    }
-
-    public Edge getCandidate() {
-        return candidate;
-    }
-
-    public Connection getSourceConnection() {
-        return sourceConnection;
-    }
-
-    public Node<?, Edge> getSourceNode() {
-        return sourceNode;
+        return new DeleteConnectorCommand(clone).execute(context);
     }
 
     @Override

@@ -16,10 +16,6 @@
 
 package org.kie.workbench.common.stunner.core.client.canvas.command;
 
-import java.util.List;
-import java.util.function.Consumer;
-
-import com.google.gwt.core.client.GWT;
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
 import org.kie.workbench.common.stunner.core.client.command.CanvasViolation;
 import org.kie.workbench.common.stunner.core.command.CommandResult;
@@ -27,14 +23,11 @@ import org.kie.workbench.common.stunner.core.command.CompositeCommand;
 import org.kie.workbench.common.stunner.core.command.impl.CompositeCommandImpl;
 import org.kie.workbench.common.stunner.core.command.util.CommandUtils;
 import org.kie.workbench.common.stunner.core.graph.Edge;
-import org.kie.workbench.common.stunner.core.graph.Graph;
 import org.kie.workbench.common.stunner.core.graph.Node;
-import org.kie.workbench.common.stunner.core.graph.content.relationship.Child;
-import org.kie.workbench.common.stunner.core.graph.content.view.View;
-import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.AbstractChildrenTraverseCallback;
+import org.kie.workbench.common.stunner.core.graph.processing.traverse.consumer.ChildrenTransverseConsumerImpl;
+import org.kie.workbench.common.stunner.core.graph.processing.traverse.consumer.ChildrenTraverseConsumer;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.ChildrenTraverseProcessorImpl;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.tree.TreeWalkTraverseProcessorImpl;
-import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
 
 /**
  * Clone a node shape into de canvas.
@@ -42,12 +35,15 @@ import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
 public class CloneCanvasNodeCommand extends AddCanvasChildNodeCommand {
 
     private transient CompositeCommand<AbstractCanvasHandler, CanvasViolation> commands;
+    private transient ChildrenTraverseConsumer childrenTraverseConsumer;
 
     public CloneCanvasNodeCommand(Node parent, Node candidate, String shapeSetId) {
         super(parent, candidate, shapeSetId);
         this.commands = new CompositeCommandImpl.CompositeCommandBuilder<AbstractCanvasHandler, CanvasViolation>()
                 .reverse()
                 .build();
+        this.childrenTraverseConsumer =
+                new ChildrenTransverseConsumerImpl(new ChildrenTraverseProcessorImpl(new TreeWalkTraverseProcessorImpl()));
     }
 
     @Override
@@ -58,27 +54,18 @@ public class CloneCanvasNodeCommand extends AddCanvasChildNodeCommand {
             return rootResult;
         }
 
-        process(getCandidate(), context.getGraphIndex().getGraph(), node -> commands.addCommand(new CloneCanvasNodeCommand(getCandidate(), node, getShapeSetId())));
+        //first process clone children nodes
+        childrenTraverseConsumer.consume(context.getGraphIndex().getGraph(), getCandidate(), node ->
+                commands.addCommand(new CloneCanvasNodeCommand(getCandidate(), node, getShapeSetId()))
+        );
+
+        //process clone connectors
+        childrenTraverseConsumer.consume(context.getGraphIndex().getGraph(), getCandidate(), node ->
+                node.getOutEdges()
+                        .stream()
+                        .forEach(edge -> commands.addCommand(new AddCanvasConnectorCommand((Edge) edge, getShapeSetId())))
+        );
+
         return commands.execute(context);
-    }
-
-    private void process(Node<?, ? extends Edge> candidate, Graph graph, Consumer<Node> nodeConsumer) {
-        if (GraphUtils.hasChildren(candidate)) {
-            new ChildrenTraverseProcessorImpl(new TreeWalkTraverseProcessorImpl())
-                    .setRootUUID(candidate.getUUID())
-                    .traverse(graph, new AbstractChildrenTraverseCallback<Node<View, Edge>, Edge<Child, Node>>() {
-                        @Override
-                        public boolean startNodeTraversal(final List<Node<View, Edge>> parents,
-                                                          final Node<View, Edge> node) {
-                            super.startNodeTraversal(parents,
-                                                     node);
-
-                            GWT.log("startNodeTraversal-LIST " + node.getUUID());
-
-                            nodeConsumer.accept(node);
-                            return true;
-                        }
-                    });
-        }
     }
 }
