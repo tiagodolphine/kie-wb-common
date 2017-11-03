@@ -24,8 +24,7 @@ import org.kie.workbench.common.stunner.core.command.impl.CompositeCommandImpl;
 import org.kie.workbench.common.stunner.core.command.util.CommandUtils;
 import org.kie.workbench.common.stunner.core.graph.Edge;
 import org.kie.workbench.common.stunner.core.graph.Node;
-import org.kie.workbench.common.stunner.core.graph.processing.traverse.consumer.ChildrenTransverseConsumerImpl;
-import org.kie.workbench.common.stunner.core.graph.processing.traverse.consumer.ChildrenTraverseConsumer;
+import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.ChildrenTraverseProcessor;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.ChildrenTraverseProcessorImpl;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.tree.TreeWalkTraverseProcessorImpl;
 
@@ -35,15 +34,14 @@ import org.kie.workbench.common.stunner.core.graph.processing.traverse.tree.Tree
 public class CloneCanvasNodeCommand extends AddCanvasChildNodeCommand {
 
     private transient CompositeCommand<AbstractCanvasHandler, CanvasViolation> commands;
-    private transient ChildrenTraverseConsumer childrenTraverseConsumer;
+    private transient ChildrenTraverseProcessor childrenTraverseProcessor;
 
     public CloneCanvasNodeCommand(Node parent, Node candidate, String shapeSetId) {
         super(parent, candidate, shapeSetId);
         this.commands = new CompositeCommandImpl.CompositeCommandBuilder<AbstractCanvasHandler, CanvasViolation>()
                 .reverse()
                 .build();
-        this.childrenTraverseConsumer =
-                new ChildrenTransverseConsumerImpl(new ChildrenTraverseProcessorImpl(new TreeWalkTraverseProcessorImpl()));
+        this.childrenTraverseProcessor = new ChildrenTraverseProcessorImpl(new TreeWalkTraverseProcessorImpl());
     }
 
     @Override
@@ -55,12 +53,12 @@ public class CloneCanvasNodeCommand extends AddCanvasChildNodeCommand {
         }
 
         //first process clone children nodes
-        childrenTraverseConsumer.consume(context.getGraphIndex().getGraph(), getCandidate(), node ->
+        childrenTraverseProcessor.consume(context.getGraphIndex().getGraph(), getCandidate(), node ->
                 commands.addCommand(new CloneCanvasNodeCommand(getCandidate(), node, getShapeSetId()))
         );
 
         //process clone connectors
-        childrenTraverseConsumer.consume(context.getGraphIndex().getGraph(), getCandidate(), node ->
+        childrenTraverseProcessor.consume(context.getGraphIndex().getGraph(), getCandidate(), node ->
                 node.getOutEdges()
                         .stream()
                         .forEach(edge -> commands.addCommand(new AddCanvasConnectorCommand((Edge) edge, getShapeSetId())))

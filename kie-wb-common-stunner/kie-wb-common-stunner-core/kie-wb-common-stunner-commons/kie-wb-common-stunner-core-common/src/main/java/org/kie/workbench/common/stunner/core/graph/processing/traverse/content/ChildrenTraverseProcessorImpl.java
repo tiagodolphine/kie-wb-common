@@ -19,6 +19,7 @@ package org.kie.workbench.common.stunner.core.graph.processing.traverse.content;
 import java.util.List;
 import java.util.Optional;
 import java.util.Stack;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.Dependent;
@@ -30,6 +31,8 @@ import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.content.relationship.Child;
 import org.kie.workbench.common.stunner.core.graph.content.view.View;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.tree.TreeWalkTraverseProcessor;
+import org.kie.workbench.common.stunner.core.graph.processing.traverse.tree.TreeWalkTraverseProcessorImpl;
+import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
 
 @Dependent
 public final class ChildrenTraverseProcessorImpl extends AbstractContentTraverseProcessor<Child, Node<View, Edge>, Edge<Child, Node>, ChildrenTraverseCallback<Node<View, Edge>, Edge<Child, Node>>>
@@ -178,6 +181,22 @@ public final class ChildrenTraverseProcessorImpl extends AbstractContentTraverse
             return rootUUID.isPresent() &&
                     null != node &&
                     node.getUUID().equals(rootUUID.get());
+        }
+    }
+
+    @Override
+    public void consume(Graph graph, Node<?, ? extends Edge> parent, Consumer<Node<?, ? extends Edge>> nodeConsumer) {
+        if (GraphUtils.hasChildren(parent)) {
+            setRootUUID(parent.getUUID()).traverse(graph, new AbstractChildrenTraverseCallback<Node<View, Edge>, Edge<Child, Node>>() {
+                @Override
+                public boolean startNodeTraversal(final List<Node<View, Edge>> parents,
+                                                  final Node<View, Edge> node) {
+                    super.startNodeTraversal(parents,
+                                             node);
+                    nodeConsumer.accept(node);
+                    return true;
+                }
+            });
         }
     }
 }

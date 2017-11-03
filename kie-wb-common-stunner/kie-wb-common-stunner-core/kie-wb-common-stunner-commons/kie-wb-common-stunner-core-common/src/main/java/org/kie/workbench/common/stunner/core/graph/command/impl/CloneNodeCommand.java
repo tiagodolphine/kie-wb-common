@@ -16,7 +16,6 @@
 package org.kie.workbench.common.stunner.core.graph.command.impl;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,8 +43,7 @@ import org.kie.workbench.common.stunner.core.graph.command.GraphCommandResultBui
 import org.kie.workbench.common.stunner.core.graph.content.definition.Definition;
 import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
 import org.kie.workbench.common.stunner.core.graph.content.view.View;
-import org.kie.workbench.common.stunner.core.graph.processing.traverse.consumer.ChildrenTransverseConsumerImpl;
-import org.kie.workbench.common.stunner.core.graph.processing.traverse.consumer.ChildrenTraverseConsumer;
+import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.ChildrenTraverseProcessor;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.ChildrenTraverseProcessorImpl;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.tree.TreeWalkTraverseProcessorImpl;
 import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
@@ -63,7 +61,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
     private final Point2D position;
     private Node<View, Edge> clone;
     private Optional<CloneNodeCommandCallback> callbackOptional;
-    private transient ChildrenTraverseConsumer childrenTraverseConsumer;
+    private transient ChildrenTraverseProcessor childrenTraverseProcessor;
 
     private static Logger LOGGER = Logger.getLogger(CloneNodeCommand.class.getName());
 
@@ -91,8 +89,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
         this.parentUuidOptional = Optional.ofNullable(parentUuid);
         this.callbackOptional = Optional.ofNullable(callback);
         this.position = position;
-        this.childrenTraverseConsumer =
-                new ChildrenTransverseConsumerImpl(new ChildrenTraverseProcessorImpl(new TreeWalkTraverseProcessorImpl()));
+        this.childrenTraverseProcessor = new ChildrenTraverseProcessorImpl(new TreeWalkTraverseProcessorImpl());
     }
 
     @Override
@@ -142,7 +139,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
         final List<Command<GraphCommandExecutionContext, RuleViolation>> childrenCommands = new LinkedList<>();
         final Map<String, Node<View, Edge>> cloneNodeMapUUID = new HashMap<>();
 
-        childrenTraverseConsumer.consume(getGraph(context), candidate, node -> {
+        childrenTraverseProcessor.consume(getGraph(context), candidate, node -> {
             //clone node
             childrenCommands.add(new CloneNodeCommand(node, clone.getUUID(), cloneCallback -> {
                 GWT.log("child cloned !!!" + cloneCallback.getUUID());
