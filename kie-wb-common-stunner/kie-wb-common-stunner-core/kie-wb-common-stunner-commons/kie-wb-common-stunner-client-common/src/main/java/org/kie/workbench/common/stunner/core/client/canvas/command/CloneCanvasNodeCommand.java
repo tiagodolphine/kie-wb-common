@@ -16,7 +16,13 @@
 
 package org.kie.workbench.common.stunner.core.client.canvas.command;
 
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import com.google.gwt.core.client.GWT;
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
+import org.kie.workbench.common.stunner.core.client.command.CanvasCommandResultBuilder;
 import org.kie.workbench.common.stunner.core.client.command.CanvasViolation;
 import org.kie.workbench.common.stunner.core.command.CommandResult;
 import org.kie.workbench.common.stunner.core.command.CompositeCommand;
@@ -47,6 +53,7 @@ public class CloneCanvasNodeCommand extends AddCanvasChildNodeCommand {
 
     @Override
     public CommandResult<CanvasViolation> execute(AbstractCanvasHandler context) {
+        GWT.log("canvas executed !");
         CommandResult<CanvasViolation> rootResult = super.execute(context);
 
         if (CommandUtils.isError(rootResult)) {
@@ -70,9 +77,9 @@ public class CloneCanvasNodeCommand extends AddCanvasChildNodeCommand {
     @Override
     public CommandResult<CanvasViolation> undo(AbstractCanvasHandler context) {
         CommandResult<CanvasViolation> commandResult = commands.undo(context);
-        if(CommandUtils.isError(commandResult)){
-            return commandResult;
-        }
-        return super.undo(context);
+        return new CanvasCommandResultBuilder(Stream.concat(StreamSupport.stream(commandResult.getViolations().spliterator(), false),
+                                                            StreamSupport.stream(super.undo(context).getViolations().spliterator(), false))
+                                                      .collect(Collectors.toList()))
+                .build();
     }
 }

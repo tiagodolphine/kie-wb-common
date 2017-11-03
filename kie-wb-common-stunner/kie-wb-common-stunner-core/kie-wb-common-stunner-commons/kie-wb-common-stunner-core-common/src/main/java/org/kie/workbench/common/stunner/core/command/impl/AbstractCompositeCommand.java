@@ -153,7 +153,7 @@ public abstract class AbstractCompositeCommand<T, V> implements CompositeCommand
         }
     }
 
-    private CommandResult<V> buildResult(final List<CommandResult<V>> results) {
+    protected CommandResult<V> buildResult(final List<CommandResult<V>> results) {
         final CommandResult.Type[] type = {CommandResult.Type.INFO};
         final List<V> violations = new LinkedList<>();
         results.stream().forEach(rr -> {
@@ -175,7 +175,7 @@ public abstract class AbstractCompositeCommand<T, V> implements CompositeCommand
         return type.getSeverity() > reference.getSeverity();
     }
 
-    private CommandResult<V> undoMultipleExecutedCommands(final T context,
+    protected CommandResult<V> undoMultipleExecutedCommands(final T context,
                                                           final List<Command<T, V>> commandStack) {
         final List<CommandResult<V>> results = new LinkedList<>();
         commandStack.stream().forEach(command -> results.add(doUndo(context,

@@ -50,6 +50,8 @@ import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
 import org.kie.workbench.common.stunner.core.rule.RuleViolation;
 import org.kie.workbench.common.stunner.core.util.UUID;
 
+import static org.kie.workbench.common.stunner.core.graph.util.GraphUtils.getPosition;
+
 /**
  * A Command to clone a node and add as a child of the given parent.
  */
@@ -135,50 +137,43 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
         List<CommandResult<RuleViolation>> commandResults = new ArrayList<>();
         commandResults.add(result);
 
-        //Handling children
+        //Children cloning process
         final List<Command<GraphCommandExecutionContext, RuleViolation>> childrenCommands = new LinkedList<>();
         final Map<String, Node<View, Edge>> cloneNodeMapUUID = new HashMap<>();
 
         childrenTraverseProcessor.consume(getGraph(context), candidate, node -> {
-            //clone node
-            childrenCommands.add(new CloneNodeCommand(node, clone.getUUID(), cloneCallback -> {
-                GWT.log("child cloned !!!" + cloneCallback.getUUID());
-                cloneNodeMapUUID.put(node.getUUID(), cloneCallback);
-            }, GraphUtils.getPosition((View) node.getContent())));
+            //clone child
+            childrenCommands.add(new CloneNodeCommand(node, clone.getUUID(), childClone -> {
+                //map the child clone UUID
+                cloneNodeMapUUID.put(node.getUUID(), childClone);
+            }, getPosition((View) node.getContent())));
         });
-
         commandResults.addAll(childrenCommands.stream().map(c -> c.execute(context)).collect(Collectors.toList()));
-        childrenCommands.clear();
 
-        //Handling connectors
+        //Cloning connectors process
         //get connector from source node and map to cloned node
-        cloneNodeMapUUID.keySet().stream()
+        List<CommandResult<RuleViolation>> connectorsResults = cloneNodeMapUUID.keySet().stream()
                 .flatMap(sourceUUID -> getNode(context, sourceUUID).getOutEdges().stream())
-                .forEach(edge -> childrenCommands.add(new CloneConnectorCommand(edge,
-                                                                                cloneNodeMapUUID.get(edge.getSourceNode().getUUID()).getUUID(),
-                                                                                cloneNodeMapUUID.get(edge.getTargetNode().getUUID()).getUUID())));
+                .map(edge -> {
 
-        commandResults.addAll(childrenCommands.stream().map(c -> c.execute(context)).collect(Collectors.toList()));
-        commandResults.add(result);
+                    CloneConnectorCommand cloneConnectorCommand = new CloneConnectorCommand(edge,
+                                                                                            cloneNodeMapUUID.get(edge.getSourceNode().getUUID()).getUUID(),
+                                                                                            cloneNodeMapUUID.get(edge.getTargetNode().getUUID()).getUUID());
+                    childrenCommands.add(cloneConnectorCommand);
+                    return cloneConnectorCommand.execute(context);
+                }).collect(Collectors.toList());
+        commandResults.addAll(connectorsResults);
 
-        CommandResult<RuleViolation> finalResult = new GraphCommandResultBuilder(commandResults
-                                                                                         .stream()
-                                                                                         .flatMap(r -> StreamSupport.stream(r.getViolations().spliterator(), false))
-                                                                                         .collect(Collectors.toList())).build();
-        callbackOptional.ifPresent(callback -> {
-            if (!CommandUtils.isError(finalResult)) {
-                callback.cloned(clone);
-                LOGGER.info("Node " + candidate.getUUID() + "was cloned successfully to " + clone.getUUID());
-            }
-        });
+        //check if rollback is necessary in case of any command result error
+        CommandResult<RuleViolation> finalResult = buildResult(commandResults);
+        if (CommandUtils.isError(finalResult)) {
+            undoMultipleExecutedCommands(context, childrenCommands);
+            return finalResult;
+        }
+
+        callbackOptional.ifPresent(callback -> callback.cloned(clone));
+        LOGGER.info("Node " + candidate.getUUID() + "was cloned successfully to " + clone.getUUID());
         return finalResult;
-    }
-
-    @Override
-    protected CommandResult<RuleViolation> doExecute(GraphCommandExecutionContext context, Command<GraphCommandExecutionContext, RuleViolation> command) {
-        GWT.log("run canvas clone " + candidate.getUUID());
-
-        return super.doExecute(context, command);
     }
 
     private Optional<String> getParentUUID() {

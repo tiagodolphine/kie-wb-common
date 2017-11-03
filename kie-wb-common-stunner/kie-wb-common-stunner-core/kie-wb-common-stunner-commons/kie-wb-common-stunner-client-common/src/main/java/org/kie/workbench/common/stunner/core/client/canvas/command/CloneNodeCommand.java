@@ -16,12 +16,14 @@
 
 package org.kie.workbench.common.stunner.core.client.canvas.command;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
 import org.kie.workbench.common.stunner.core.client.command.CanvasViolation;
 import org.kie.workbench.common.stunner.core.command.Command;
+import org.kie.workbench.common.stunner.core.command.CommandResult;
 import org.kie.workbench.common.stunner.core.command.CompositeCommand;
 import org.kie.workbench.common.stunner.core.command.impl.CompositeCommandImpl;
 import org.kie.workbench.common.stunner.core.graph.Node;
@@ -69,9 +71,18 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
     }
 
     private org.kie.workbench.common.stunner.core.graph.command.impl.CloneNodeCommand.CloneNodeCommandCallback cloneNodeCallback(AbstractCanvasHandler context) {
-        return clone -> command.addCommand(
-                new CloneCanvasNodeCommand(GraphUtils.getParent(clone).asNode(),
-                                           clone,
-                                           context.getDiagram().getMetadata().getShapeSetId()));
+        return clone -> {
+            //check if not a redo operation, in case size == 1 it was set before
+            if (Objects.equals(command.size(), 0)) {
+                command.addCommand(new CloneCanvasNodeCommand(GraphUtils.getParent(clone).asNode(),
+                                                              clone,
+                                                              context.getDiagram().getMetadata().getShapeSetId()));
+            }
+        };
+    }
+
+    @Override
+    public CommandResult<CanvasViolation> undo(AbstractCanvasHandler context) {
+        return super.undo(context);
     }
 }
