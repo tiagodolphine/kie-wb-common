@@ -23,6 +23,7 @@ import org.kie.workbench.common.stunner.core.command.CompositeCommand;
 import org.kie.workbench.common.stunner.core.command.impl.CompositeCommandImpl;
 import org.kie.workbench.common.stunner.core.command.util.CommandUtils;
 import org.kie.workbench.common.stunner.core.graph.Edge;
+import org.kie.workbench.common.stunner.core.graph.Graph;
 import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.ChildrenTraverseProcessor;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.ChildrenTraverseProcessorImpl;
@@ -53,17 +54,25 @@ public class CloneCanvasNodeCommand extends AddCanvasChildNodeCommand {
         }
 
         //first process clone children nodes
-        childrenTraverseProcessor.consume(context.getGraphIndex().getGraph(), getCandidate(), node ->
-                commands.addCommand(new CloneCanvasNodeCommand(getCandidate(), node, getShapeSetId()))
-        );
+        Graph graph = context.getGraphIndex().getGraph();
+        childrenTraverseProcessor.consume(graph, getCandidate(), node ->
+                commands.addCommand(new CloneCanvasNodeCommand(getCandidate(), node, getShapeSetId())));
 
         //process clone connectors
-        childrenTraverseProcessor.consume(context.getGraphIndex().getGraph(), getCandidate(), node ->
+        childrenTraverseProcessor.consume(graph, getCandidate(), node ->
                 node.getOutEdges()
                         .stream()
-                        .forEach(edge -> commands.addCommand(new AddCanvasConnectorCommand((Edge) edge, getShapeSetId())))
-        );
+                        .forEach(edge -> commands.addCommand(new AddCanvasConnectorCommand((Edge) edge, getShapeSetId()))));
 
         return commands.execute(context);
+    }
+
+    @Override
+    public CommandResult<CanvasViolation> undo(AbstractCanvasHandler context) {
+        CommandResult<CanvasViolation> commandResult = commands.undo(context);
+        if(CommandUtils.isError(commandResult)){
+            return commandResult;
+        }
+        return super.undo(context);
     }
 }
