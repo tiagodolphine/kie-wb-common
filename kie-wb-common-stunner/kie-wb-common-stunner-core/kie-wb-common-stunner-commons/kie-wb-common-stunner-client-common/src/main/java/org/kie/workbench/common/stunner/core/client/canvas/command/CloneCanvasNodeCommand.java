@@ -34,6 +34,7 @@ import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.ChildrenTraverseProcessor;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.ChildrenTraverseProcessorImpl;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.tree.TreeWalkTraverseProcessorImpl;
+import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
 
 /**
  * Clone a node shape into de canvas.
@@ -45,15 +46,17 @@ public class CloneCanvasNodeCommand extends AddCanvasChildNodeCommand {
 
     public CloneCanvasNodeCommand(Node parent, Node candidate, String shapeSetId) {
         super(parent, candidate, shapeSetId);
-        this.commands = new CompositeCommandImpl.CompositeCommandBuilder<AbstractCanvasHandler, CanvasViolation>()
-                .reverse()
-                .build();
+
         this.childrenTraverseProcessor = new ChildrenTraverseProcessorImpl(new TreeWalkTraverseProcessorImpl());
     }
 
     @Override
     public CommandResult<CanvasViolation> execute(AbstractCanvasHandler context) {
-        GWT.log("canvas executed !");
+        this.commands = new CompositeCommandImpl.CompositeCommandBuilder<AbstractCanvasHandler, CanvasViolation>()
+                .reverse()
+                .build();
+
+        GWT.log("canvas executed !" + commands.size());
         CommandResult<CanvasViolation> rootResult = super.execute(context);
 
         if (CommandUtils.isError(rootResult)) {
@@ -77,9 +80,9 @@ public class CloneCanvasNodeCommand extends AddCanvasChildNodeCommand {
     @Override
     public CommandResult<CanvasViolation> undo(AbstractCanvasHandler context) {
         CommandResult<CanvasViolation> commandResult = commands.undo(context);
+        CommandResult<CanvasViolation> undoResult = super.undo(context);
         return new CanvasCommandResultBuilder(Stream.concat(StreamSupport.stream(commandResult.getViolations().spliterator(), false),
-                                                            StreamSupport.stream(super.undo(context).getViolations().spliterator(), false))
-                                                      .collect(Collectors.toList()))
-                .build();
+                                                            StreamSupport.stream(undoResult.getViolations().spliterator(), false))
+                                                      .collect(Collectors.toList())).build();
     }
 }

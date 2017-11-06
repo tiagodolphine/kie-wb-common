@@ -128,6 +128,10 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
                                                .collect(Collectors.toList()));
 
             // Execute the command.
+            if(Objects.equals(commandBuilder.size(), 0)) {
+                return;
+            }
+
             final CommandResult<CanvasViolation> result = sessionCommandManager.execute(getCanvasHandler(), commandBuilder.build());
 
             //Send feedback.

@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
+import com.google.gwt.core.client.GWT;
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
 import org.kie.workbench.common.stunner.core.client.command.CanvasViolation;
 import org.kie.workbench.common.stunner.core.command.Command;
@@ -46,13 +47,13 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
 
     @SuppressWarnings("unchecked")
     public CloneNodeCommand(final Node candidate, final String parentUuid, final Point2D cloneLocation, final Consumer<Node> cloneNodeCommandCallback) {
-        this.command = new CompositeCommandImpl.CompositeCommandBuilder<AbstractCanvasHandler, CanvasViolation>()
-                .reverse()
-                .build();
         this.candidate = candidate;
         this.cloneLocation = Optional.ofNullable(cloneLocation);
         this.parentUuid = parentUuid;
         this.cloneNodeCommandCallback = Optional.ofNullable(cloneNodeCommandCallback);
+        this.command = new CompositeCommandImpl.CompositeCommandBuilder<AbstractCanvasHandler, CanvasViolation>()
+                .reverse()
+                .build();
     }
 
     @Override
@@ -66,7 +67,7 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
 
     @Override
     protected Command<AbstractCanvasHandler, CanvasViolation> newCanvasCommand(final AbstractCanvasHandler context) {
-        return command;
+        return this.command;
     }
 
     private Point2D getClonePosition() {
@@ -77,11 +78,12 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
         return clone -> {
             //check if not a redo operation, in case size == 1 it was set before
             if (Objects.equals(command.size(), 0)) {
+                GWT.log("CloneCanvasNodeCommand ! "+ clone.getUUID());
                 command.addCommand(new CloneCanvasNodeCommand(GraphUtils.getParent(clone).asNode(),
                                                               clone,
                                                               context.getDiagram().getMetadata().getShapeSetId()));
             }
-            cloneNodeCommandCallback.ifPresent(callback -> callback.accept(clone));
+            //cloneNodeCommandCallback.ifPresent(callback -> callback.accept(clone));
         };
     }
 

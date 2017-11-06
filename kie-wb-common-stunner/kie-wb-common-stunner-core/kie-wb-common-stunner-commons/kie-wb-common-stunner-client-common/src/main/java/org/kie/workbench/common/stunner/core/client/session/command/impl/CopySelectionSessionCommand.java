@@ -83,6 +83,7 @@ public class CopySelectionSessionCommand extends AbstractClientSessionCommand<Cl
                 if (selectionControl.getSelectedItems().stream()
                         .map(this::getElement)
                         .anyMatch(element -> !(element instanceof Node))) {
+                    clipboardControl.clear();
                     throw new RuntimeException("Copy node only is allowed");
                 }
 
