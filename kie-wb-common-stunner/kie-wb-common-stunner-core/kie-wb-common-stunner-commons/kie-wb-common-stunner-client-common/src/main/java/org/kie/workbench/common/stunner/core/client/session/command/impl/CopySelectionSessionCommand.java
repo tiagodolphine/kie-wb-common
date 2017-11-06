@@ -51,8 +51,6 @@ public class CopySelectionSessionCommand extends AbstractClientSessionCommand<Cl
     public CopySelectionSessionCommand(final ClipboardControl clipboardControl) {
         super(true);
         this.clipboardControl = clipboardControl;
-
-        GWT.log("CopySelectionSessionCommand");
     }
 
     @Override
@@ -68,7 +66,6 @@ public class CopySelectionSessionCommand extends AbstractClientSessionCommand<Cl
     private void handleCtrlC(Key[] keys) {
         if (doKeysMatch(keys, Key.CONTROL, Key.C)) {
             this.execute(newDefaultCallback("Error while trying to copy selected items. Message="));
-            GWT.log("CTRL + C");
         }
     }
 
@@ -92,7 +89,6 @@ public class CopySelectionSessionCommand extends AbstractClientSessionCommand<Cl
                                              .map(this::getElement)
                                              .filter(element -> element instanceof Node)
                                              .toArray(Element[]::new));
-                //TODO: handle Edges copy
 
                 callback.onSuccess();
             } catch (Exception e) {

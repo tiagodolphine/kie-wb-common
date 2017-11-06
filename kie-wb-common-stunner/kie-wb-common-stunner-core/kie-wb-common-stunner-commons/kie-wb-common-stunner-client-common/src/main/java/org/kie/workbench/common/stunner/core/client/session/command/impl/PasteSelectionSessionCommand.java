@@ -31,7 +31,6 @@ import javax.inject.Inject;
 
 import com.google.gwt.core.client.GWT;
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
-import org.kie.workbench.common.stunner.core.client.canvas.CanvasHandler;
 import org.kie.workbench.common.stunner.core.client.canvas.controls.clipboard.ClipboardControl;
 import org.kie.workbench.common.stunner.core.client.canvas.event.selection.CanvasElementSelectedEvent;
 import org.kie.workbench.common.stunner.core.client.canvas.util.CanvasLayoutUtils;
@@ -102,7 +101,6 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
 
     private void handleCtrlV(Key[] keys) {
         if (doKeysMatch(keys, Key.CONTROL, Key.V)) {
-            GWT.log("CTRL + V");
             this.execute(newDefaultCallback("Error while trying to paste selected items. Message="));
         }
     }
@@ -128,7 +126,7 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
                                                .collect(Collectors.toList()));
 
             // Execute the command.
-            if(Objects.equals(commandBuilder.size(), 0)) {
+            if (Objects.equals(commandBuilder.size(), 0)) {
                 return;
             }
 
@@ -137,7 +135,7 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
             //Send feedback.
             setCallback(callback, result);
 
-            if(!CommandUtils.isError(result)){
+            if (!CommandUtils.isError(result)) {
                 fireSelectedElementEvent();
             }
         }

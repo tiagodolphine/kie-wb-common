@@ -28,6 +28,7 @@ import org.kie.workbench.common.stunner.core.command.Command;
 import org.kie.workbench.common.stunner.core.command.CommandResult;
 import org.kie.workbench.common.stunner.core.command.CompositeCommand;
 import org.kie.workbench.common.stunner.core.command.impl.CompositeCommandImpl;
+import org.kie.workbench.common.stunner.core.command.impl.CompositeCommandImpl.CompositeCommandBuilder;
 import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.command.GraphCommandExecutionContext;
 import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
@@ -36,8 +37,6 @@ import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
 import org.kie.workbench.common.stunner.core.rule.RuleViolation;
 
 public class CloneNodeCommand extends AbstractCanvasGraphCommand {
-
-    private static Logger LOGGER = Logger.getLogger(CloneNodeCommand.class.getName());
 
     private final Node candidate;
     private final String parentUuid;
@@ -51,7 +50,7 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
         this.cloneLocation = Optional.ofNullable(cloneLocation);
         this.parentUuid = parentUuid;
         this.cloneNodeCommandCallback = Optional.ofNullable(cloneNodeCommandCallback);
-        this.command = new CompositeCommandImpl.CompositeCommandBuilder<AbstractCanvasHandler, CanvasViolation>()
+        this.command = new CompositeCommandBuilder<AbstractCanvasHandler, CanvasViolation>()
                 .reverse()
                 .build();
     }
@@ -74,16 +73,15 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
         return cloneLocation.orElseGet(() -> GraphUtils.getPosition((View) candidate.getContent()));
     }
 
-    private org.kie.workbench.common.stunner.core.graph.command.impl.CloneNodeCommand.CloneNodeCommandCallback cloneNodeCallback(AbstractCanvasHandler context) {
+    private Consumer<Node> cloneNodeCallback(AbstractCanvasHandler context) {
         return clone -> {
             //check if not a redo operation, in case size == 1 it was set before
             if (Objects.equals(command.size(), 0)) {
-                GWT.log("CloneCanvasNodeCommand ! "+ clone.getUUID());
                 command.addCommand(new CloneCanvasNodeCommand(GraphUtils.getParent(clone).asNode(),
                                                               clone,
                                                               context.getDiagram().getMetadata().getShapeSetId()));
             }
-            //cloneNodeCommandCallback.ifPresent(callback -> callback.accept(clone));
+            cloneNodeCommandCallback.ifPresent(callback -> callback.accept(clone));
         };
     }
 

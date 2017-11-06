@@ -61,7 +61,6 @@ public class CutSelectionSessionCommand extends AbstractClientSessionCommand<Cli
     private void handleCtrlX(Key[] keys) {
         if (doKeysMatch(keys, Key.CONTROL, Key.X)) {
             this.execute(newDefaultCallback("Error while trying to cut selected items. Message="));
-            GWT.log("CTRL + X");
         }
     }
 

@@ -21,11 +21,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.jboss.errai.common.client.api.annotations.MapsTo;
-import org.jboss.errai.common.client.api.annotations.NonPortable;
 import org.jboss.errai.common.client.api.annotations.Portable;
 import org.kie.soup.commons.validation.PortablePreconditions;
 import org.kie.workbench.common.stunner.core.command.Command;
@@ -59,20 +59,10 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
     private final Optional<String> parentUuidOptional;
     private final Point2D position;
     private Node<View, Edge> clone;
-    private Optional<CloneNodeCommandCallback> callbackOptional;
+    private Optional<Consumer<Node>> callbackOptional;
     private transient ChildrenTraverseProcessor childrenTraverseProcessor;
 
     private static Logger LOGGER = Logger.getLogger(CloneNodeCommand.class.getName());
-
-    /**
-     * Callback interface to be used whether it is necessary to receive the cloned node after
-     * the {{@link CloneNodeCommand#execute(GraphCommandExecutionContext)}} is called.
-     */
-    @NonPortable
-    public interface CloneNodeCommandCallback {
-
-        void cloned(Node<View, Edge> candidate);
-    }
 
     protected CloneNodeCommand() {
         this(null, null, null, null);
@@ -83,7 +73,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
              PortablePreconditions.checkNotNull("parentUuid", parentUuid), null, null);
     }
 
-    public CloneNodeCommand(final Node candidate, final String parentUuid, final Point2D position, final CloneNodeCommandCallback callback) {
+    public CloneNodeCommand(final Node candidate, final String parentUuid, final Point2D position, final Consumer<Node> callback) {
         this.candidate = candidate;
         this.parentUuidOptional = Optional.ofNullable(parentUuid);
         this.position = position;
@@ -170,7 +160,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
             return finalResult;
         }
 
-        callbackOptional.ifPresent(callback -> callback.cloned(clone));
+        callbackOptional.ifPresent(callback -> callback.accept(clone));
         LOGGER.info("Node " + candidate.getUUID() + "was cloned successfully to " + clone.getUUID());
         return finalResult;
     }
@@ -190,6 +180,5 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
     @Override
     public CommandResult<RuleViolation> undo(GraphCommandExecutionContext context) {
         return new SafeDeleteNodeCommand(clone).execute(context);
-        //return super.undo(context);
     }
 }

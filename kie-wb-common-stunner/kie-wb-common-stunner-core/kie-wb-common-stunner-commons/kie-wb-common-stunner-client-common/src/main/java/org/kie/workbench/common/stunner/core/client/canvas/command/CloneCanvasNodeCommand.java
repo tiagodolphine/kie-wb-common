@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.google.gwt.core.client.GWT;
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
 import org.kie.workbench.common.stunner.core.client.command.CanvasCommandResultBuilder;
 import org.kie.workbench.common.stunner.core.client.command.CanvasViolation;
@@ -34,7 +33,6 @@ import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.ChildrenTraverseProcessor;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.content.ChildrenTraverseProcessorImpl;
 import org.kie.workbench.common.stunner.core.graph.processing.traverse.tree.TreeWalkTraverseProcessorImpl;
-import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
 
 /**
  * Clone a node shape into de canvas.
@@ -56,7 +54,6 @@ public class CloneCanvasNodeCommand extends AddCanvasChildNodeCommand {
                 .reverse()
                 .build();
 
-        GWT.log("canvas executed !" + commands.size());
         CommandResult<CanvasViolation> rootResult = super.execute(context);
 
         if (CommandUtils.isError(rootResult)) {
