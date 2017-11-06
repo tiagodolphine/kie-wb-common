@@ -18,6 +18,7 @@ package org.kie.workbench.common.stunner.core.client.canvas.command;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
@@ -41,15 +42,17 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
     private final String parentUuid;
     private Optional<Point2D> cloneLocation;
     private transient CompositeCommand<AbstractCanvasHandler, CanvasViolation> command;
+    private final Optional<Consumer<Node>> cloneNodeCommandCallback;
 
     @SuppressWarnings("unchecked")
-    public CloneNodeCommand(final Node candidate, String parentUuid, Point2D cloneLocation) {
+    public CloneNodeCommand(final Node candidate, final String parentUuid, final Point2D cloneLocation, final Consumer<Node> cloneNodeCommandCallback) {
         this.command = new CompositeCommandImpl.CompositeCommandBuilder<AbstractCanvasHandler, CanvasViolation>()
                 .reverse()
                 .build();
         this.candidate = candidate;
         this.cloneLocation = Optional.ofNullable(cloneLocation);
         this.parentUuid = parentUuid;
+        this.cloneNodeCommandCallback = Optional.ofNullable(cloneNodeCommandCallback);
     }
 
     @Override
@@ -57,8 +60,8 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
     protected Command<GraphCommandExecutionContext, RuleViolation> newGraphCommand(final AbstractCanvasHandler context) {
         return new org.kie.workbench.common.stunner.core.graph.command.impl.CloneNodeCommand(candidate,
                                                                                              parentUuid,
-                                                                                             cloneNodeCallback(context),
-                                                                                             getClonePosition());
+                                                                                             getClonePosition(),
+                                                                                             cloneNodeCallback(context));
     }
 
     @Override
@@ -78,6 +81,7 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
                                                               clone,
                                                               context.getDiagram().getMetadata().getShapeSetId()));
             }
+            cloneNodeCommandCallback.ifPresent(callback -> callback.accept(clone));
         };
     }
 

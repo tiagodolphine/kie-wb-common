@@ -23,9 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
-import com.google.gwt.core.client.GWT;
 import org.jboss.errai.common.client.api.annotations.MapsTo;
 import org.jboss.errai.common.client.api.annotations.NonPortable;
 import org.jboss.errai.common.client.api.annotations.Portable;
@@ -39,7 +37,6 @@ import org.kie.workbench.common.stunner.core.graph.Edge;
 import org.kie.workbench.common.stunner.core.graph.Element;
 import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.command.GraphCommandExecutionContext;
-import org.kie.workbench.common.stunner.core.graph.command.GraphCommandResultBuilder;
 import org.kie.workbench.common.stunner.core.graph.content.definition.Definition;
 import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
 import org.kie.workbench.common.stunner.core.graph.content.view.View;
@@ -86,11 +83,11 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
              PortablePreconditions.checkNotNull("parentUuid", parentUuid), null, null);
     }
 
-    public CloneNodeCommand(final Node candidate, final String parentUuid, final CloneNodeCommandCallback callback, final Point2D position) {
+    public CloneNodeCommand(final Node candidate, final String parentUuid, final Point2D position, final CloneNodeCommandCallback callback) {
         this.candidate = candidate;
         this.parentUuidOptional = Optional.ofNullable(parentUuid);
-        this.callbackOptional = Optional.ofNullable(callback);
         this.position = position;
+        this.callbackOptional = Optional.ofNullable(callback);
         this.childrenTraverseProcessor = new ChildrenTraverseProcessorImpl(new TreeWalkTraverseProcessorImpl());
     }
 
@@ -142,11 +139,12 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
         final Map<String, Node<View, Edge>> cloneNodeMapUUID = new HashMap<>();
 
         childrenTraverseProcessor.consume(getGraph(context), candidate, node -> {
-            //clone child
-            childrenCommands.add(new CloneNodeCommand(node, clone.getUUID(), childClone -> {
-                //map the child clone UUID
-                cloneNodeMapUUID.put(node.getUUID(), childClone);
-            }, getPosition((View) node.getContent())));
+            //clone child and map clone uuid
+            childrenCommands.add(new CloneNodeCommand(node,
+                                                      clone.getUUID(),
+                                                      getPosition((View) node.getContent()),
+                                                      childClone -> cloneNodeMapUUID.put(node.getUUID(), childClone)
+            ));
         });
         commandResults.addAll(childrenCommands.stream().map(c -> c.execute(context)).collect(Collectors.toList()));
 
@@ -164,10 +162,11 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
                 }).collect(Collectors.toList());
         commandResults.addAll(connectorsResults);
 
-        //check if rollback is necessary in case of any command result error
+        //in case of any error than rollback all commands
         CommandResult<RuleViolation> finalResult = buildResult(commandResults);
         if (CommandUtils.isError(finalResult)) {
             undoMultipleExecutedCommands(context, childrenCommands);
+            undoMultipleExecutedCommands(context, getCommands());
             return finalResult;
         }
 
