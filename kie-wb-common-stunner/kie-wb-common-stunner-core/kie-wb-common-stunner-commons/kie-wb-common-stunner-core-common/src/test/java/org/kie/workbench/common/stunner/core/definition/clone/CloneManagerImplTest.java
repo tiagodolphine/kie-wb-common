@@ -16,18 +16,64 @@
 
 package org.kie.workbench.common.stunner.core.definition.clone;
 
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.junit.Assert.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
+@RunWith(MockitoJUnitRunner.class)
 public class CloneManagerImplTest {
 
-    @Test
-    public void testClone() throws Exception {
-        //TODO
+    private CloneManagerImpl cloneManager;
+
+    private Object def1;
+
+    private Object def2;
+
+    @Mock
+    private DeepCloneProcess deepCloneProcess;
+
+    @Mock
+    private DefaultCloneProcess defaultCloneProcess;
+
+    @Mock
+    private NoneCloneProcess noneCloneProcess;
+
+    @Before
+    public void setUp() {
+        cloneManager = new CloneManagerImpl(deepCloneProcess, defaultCloneProcess, noneCloneProcess);
     }
 
     @Test
-    public void testClone1() throws Exception {
+    public void testClone() throws Exception {
+        cloneManager.clone(def1, ClonePolicy.ALL);
+        verify(deepCloneProcess, times(1)).clone(def1);
+
+        cloneManager.clone(def1, ClonePolicy.DEFAULT);
+        verify(defaultCloneProcess, times(1)).clone(def1);
+
+        cloneManager.clone(def1, ClonePolicy.NONE);
+        verify(noneCloneProcess, times(1)).clone(def1);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testCloneNullPolicy() {
+        cloneManager.clone(def1, null);
+    }
+
+    @Test
+    public void testCloneParam() throws Exception {
+        cloneManager.clone(def1, def2, ClonePolicy.ALL);
+        verify(deepCloneProcess, times(1)).clone(def1, def2);
+
+        cloneManager.clone(def1, def2, ClonePolicy.DEFAULT);
+        verify(defaultCloneProcess, times(1)).clone(def1, def2);
+
+        cloneManager.clone(def1, def2, ClonePolicy.NONE);
+        verify(noneCloneProcess, times(1)).clone(def1, def2);
     }
 }

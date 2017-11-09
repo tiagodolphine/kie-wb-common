@@ -99,4 +99,8 @@ public final class CloneConnectorCommand extends AbstractGraphCompositeCommand {
     protected Edge getCandidate() {
         return candidate;
     }
+
+    protected Edge getClone() {
+        return clone;
+    }
 }

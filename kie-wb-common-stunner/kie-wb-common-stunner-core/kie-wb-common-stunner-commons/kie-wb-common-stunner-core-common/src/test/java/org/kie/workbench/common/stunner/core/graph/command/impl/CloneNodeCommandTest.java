@@ -22,40 +22,22 @@ import java.util.function.Function;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.kie.workbench.common.stunner.core.TestingGraphInstanceBuilder;
-import org.kie.workbench.common.stunner.core.TestingGraphMockHandler;
-import org.kie.workbench.common.stunner.core.definition.clone.CloneManager;
-import org.kie.workbench.common.stunner.core.definition.clone.ClonePolicy;
 import org.kie.workbench.common.stunner.core.graph.Edge;
-import org.kie.workbench.common.stunner.core.graph.Element;
 import org.kie.workbench.common.stunner.core.graph.Node;
-import org.kie.workbench.common.stunner.core.graph.content.Bounds;
-import org.kie.workbench.common.stunner.core.graph.content.definition.Definition;
-import org.kie.workbench.common.stunner.core.graph.content.view.BoundImpl;
-import org.kie.workbench.common.stunner.core.graph.content.view.BoundsImpl;
 import org.kie.workbench.common.stunner.core.graph.content.view.MagnetConnection;
 import org.kie.workbench.common.stunner.core.graph.content.view.Point2D;
 import org.kie.workbench.common.stunner.core.graph.content.view.View;
-import org.kie.workbench.common.stunner.core.graph.content.view.ViewConnector;
-import org.kie.workbench.common.stunner.core.graph.content.view.ViewConnectorImpl;
-import org.kie.workbench.common.stunner.core.util.UUID;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class CloneNodeCommandTest extends AbstractGraphCommandTest {
+public class CloneNodeCommandTest extends AbstractCloneCommandTest {
 
     private CloneNodeCommand cloneNodeCommand;
 
@@ -63,92 +45,15 @@ public class CloneNodeCommandTest extends AbstractGraphCommandTest {
 
     private Node<View, Edge> parent;
 
-    @Mock
-    private Node<View, Edge> clone;
-
-    @Mock
-    private Edge cloneEdge;
-
-    @Mock
-    private Element cloneElement;
-
-    @Mock
-    private View candidateContent;
-
-    private ViewConnector connectorContent;
-
-    @Mock
-    private Object connectorDefinition;
-
-    @Mock
-    private View cloneContent;
-
-    @Mock
-    private Definition definition;
-
-    @Mock
-    private CloneManager cloneManager;
-
-    @Mock
-    private Bounds bounds;
-
-    @Mock
-    private Bounds.Bound bound;
-
     private Point2D position;
 
-    private TestingGraphInstanceBuilder.TestGraph3 graphInstance;
-
-    private static final String CLONE_UUID = UUID.uuid();
-
-    private static final String CLONE_EDGE_UUID = UUID.uuid();
-
     @Before
-    public void setUp() throws Exception {
-        super.init(0, 0);
+    public void setUp() {
+        super.setUp();
 
-        //creating the mock graph for test
-        TestingGraphMockHandler handler = new TestingGraphMockHandler();
-        graphInstance = TestingGraphInstanceBuilder.newGraph3(handler);
-        graph = graphInstance.graph;
         candidate = graphInstance.containerNode;
         parent = graphInstance.parentNode;
         candidate.setContent(candidateContent);
-        graphIndex = handler.graphIndex;
-
-        //edge mock
-        connectorContent = new ViewConnectorImpl(connectorDefinition, new BoundsImpl(new BoundImpl(1d, 1d), new BoundImpl(1d, 1d)));
-        connectorContent.setSourceConnection(MagnetConnection.Builder.forElement(graphInstance.startNode));
-        connectorContent.setTargetConnection(MagnetConnection.Builder.forElement(graphInstance.intermNode));
-        graphInstance.edge1.setContent(connectorContent);
-        graphInstance.edge2.setContent(connectorContent);
-
-        //mocking the clone nodes on the graphIndex
-        ArgumentCaptor<Node> nodeArgumentCaptor = ArgumentCaptor.forClass(Node.class);
-        when(handler.graphIndex.addNode(nodeArgumentCaptor.capture())).thenAnswer(
-                t -> {
-                    //Node node = (Node)t.getArguments()[0];
-                    when(graphIndex.getNode(eq(nodeArgumentCaptor.getValue().getUUID()))).thenReturn(nodeArgumentCaptor.getValue());
-                    return graphIndex;
-                });
-
-        when(definitionManager.cloneManager()).thenReturn(cloneManager);
-        when(cloneManager.clone(definition, ClonePolicy.ALL)).thenReturn(definition);
-        when(cloneManager.clone(connectorDefinition, ClonePolicy.ALL)).thenReturn(connectorDefinition);
-        when(graphCommandExecutionContext.getGraphIndex()).thenReturn(graphIndex);
-        when(candidateContent.getDefinition()).thenReturn(definition);
-        when(factoryManager.newElement(anyString(), any(Class.class))).thenReturn(cloneElement);
-        when(cloneElement.asNode()).thenReturn(clone);
-        when(cloneElement.asEdge()).thenReturn(cloneEdge);
-        when(cloneEdge.getContent()).thenReturn(connectorContent);
-        when(cloneEdge.getUUID()).thenReturn(CLONE_EDGE_UUID);
-        when(clone.getContent()).thenReturn(cloneContent);
-        when(clone.getUUID()).thenReturn(CLONE_UUID);
-        when(cloneElement.getUUID()).thenReturn(CLONE_UUID);
-        when(cloneContent.getBounds()).thenReturn(bounds);
-        when(bounds.getUpperLeft()).thenReturn(bound);
-        when(bounds.getLowerRight()).thenReturn(bound);
-
         this.position = new Point2D(1, 1);
         this.cloneNodeCommand = new CloneNodeCommand(candidate, parent.getUUID(), position, null);
     }

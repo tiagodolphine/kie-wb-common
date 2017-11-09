@@ -16,18 +16,85 @@
 
 package org.kie.workbench.common.stunner.core.graph.command.impl;
 
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.kie.workbench.common.stunner.core.command.Command;
+import org.kie.workbench.common.stunner.core.graph.Edge;
+import org.kie.workbench.common.stunner.core.graph.Element;
+import org.kie.workbench.common.stunner.core.graph.command.GraphCommandExecutionContext;
+import org.kie.workbench.common.stunner.core.graph.content.view.MagnetConnection;
+import org.kie.workbench.common.stunner.core.graph.content.view.ViewConnector;
+import org.kie.workbench.common.stunner.core.rule.RuleViolation;
+import org.kie.workbench.common.stunner.core.util.UUID;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-public class CloneConnectorCommandTest {
+@RunWith(MockitoJUnitRunner.class)
+public class CloneConnectorCommandTest extends AbstractCloneCommandTest{
+
+    private CloneConnectorCommand cloneConnectorCommand;
+
+    Edge candidate;
+    String sourceNodeUUID;
+    String targetNodeUUID;
+
+    @Before
+    public void setUp(){
+        super.setUp();
+
+        candidate = graphInstance.edge1;
+        sourceNodeUUID = graphInstance.startNode.getUUID();
+        targetNodeUUID = graphInstance.intermNode.getUUID();
+        this.cloneConnectorCommand = new CloneConnectorCommand(candidate, sourceNodeUUID, targetNodeUUID);
+    }
 
     @Test
     public void initialize() throws Exception {
-        //TODO
+        cloneConnectorCommand.initialize(graphCommandExecutionContext);
+        AddConnectorCommand addConnectorCommand =
+                getExecutedCommand(command -> command instanceof AddConnectorCommand);
+
+        assertEquals(addConnectorCommand.getEdge(), cloneEdge);
+        assertEquals(addConnectorCommand.getSourceNode().getUUID(), sourceNodeUUID);
+        assertEquals(addConnectorCommand.getConnection(), sourceConnection);
+
+        SetConnectionTargetNodeCommand setConnectionTargetNodeCommand =
+                getExecutedCommand(command -> command instanceof SetConnectionTargetNodeCommand);
+
+        assertEquals(setConnectionTargetNodeCommand.getTargetNode().getUUID(), targetNodeUUID);
+        assertEquals(setConnectionTargetNodeCommand.getEdge(), cloneEdge);
+        assertEquals(setConnectionTargetNodeCommand.getConnection(), targetConnection);
+
+        verify(graphIndex, times(1)).addEdge(cloneEdge);
+    }
+
+    public <T> T getExecutedCommand(Function<Command, Boolean> filter) {
+        return cloneConnectorCommand.getCommands().stream()
+                .filter(command -> filter.apply(command))
+                .map(command -> (T) command)
+                .findFirst()
+                .get();
     }
 
     @Test
     public void undo() throws Exception {
+        cloneConnectorCommand.execute(graphCommandExecutionContext);
+        cloneConnectorCommand.undo(graphCommandExecutionContext);
+        verify(graphIndex, times(1)).removeEdge(cloneEdge);
     }
 }
