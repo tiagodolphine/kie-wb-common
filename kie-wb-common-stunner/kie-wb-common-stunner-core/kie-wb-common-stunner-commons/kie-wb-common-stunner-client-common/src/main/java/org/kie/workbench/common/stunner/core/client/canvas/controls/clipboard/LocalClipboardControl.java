@@ -16,7 +16,6 @@
 
 package org.kie.workbench.common.stunner.core.client.canvas.controls.clipboard;
 
-import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,7 +26,6 @@ import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 
-import freemarker.ext.beans.HashAdapter;
 import org.kie.workbench.common.stunner.core.graph.Element;
 import org.kie.workbench.common.stunner.core.graph.util.GraphUtils;
 
@@ -37,13 +35,13 @@ public class LocalClipboardControl implements ClipboardControl<Element> {
     private final Set<Element> elements;
     private final Map<String, String> elementsParent;
 
-
     public LocalClipboardControl() {
-        this.elements = new HashSet<>();this.elementsParent = new HashMap<>();
+        this.elements = new HashSet<>();
+        this.elementsParent = new HashMap<>();
     }
 
     @Override
-    public ClipboardControl<Element> add(Element[] element) {
+    public ClipboardControl<Element> set(Element... element) {
         clear();
         elements.addAll(Arrays.stream(element).collect(Collectors.toSet()));
         elementsParent.putAll(elements.stream().collect(Collectors.toMap(Element::getUUID, e -> GraphUtils.getParent(e.asNode()).getUUID())));
@@ -51,7 +49,7 @@ public class LocalClipboardControl implements ClipboardControl<Element> {
     }
 
     @Override
-    public ClipboardControl<Element> remove(Element[] element) {
+    public ClipboardControl<Element> remove(Element... element) {
         elements.removeAll(Arrays.stream(element).collect(Collectors.toSet()));
         return this;
     }

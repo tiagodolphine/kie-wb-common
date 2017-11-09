@@ -50,7 +50,7 @@ import org.kie.workbench.common.stunner.core.util.UUID;
 import static org.kie.workbench.common.stunner.core.graph.util.GraphUtils.getPosition;
 
 /**
- * A Command to clone a node and add as a child of the given parent.
+ * A Command to clone a node and set as a child of the given parent.
  */
 @Portable
 public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
@@ -61,6 +61,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
     private Node<View, Edge> clone;
     private Optional<Consumer<Node>> callbackOptional;
     private transient ChildrenTraverseProcessor childrenTraverseProcessor;
+    private List<Command<GraphCommandExecutionContext, RuleViolation>> childrenCommands;
 
     private static Logger LOGGER = Logger.getLogger(CloneNodeCommand.class.getName());
 
@@ -79,12 +80,6 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
         this.position = position;
         this.callbackOptional = Optional.ofNullable(callback);
         this.childrenTraverseProcessor = new ChildrenTraverseProcessorImpl(new TreeWalkTraverseProcessorImpl());
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public CommandResult<RuleViolation> allow(final GraphCommandExecutionContext context) {
-        return super.allow(context);
     }
 
     @Override
@@ -125,7 +120,7 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
         commandResults.add(result);
 
         //Children cloning process
-        final List<Command<GraphCommandExecutionContext, RuleViolation>> childrenCommands = new LinkedList<>();
+        childrenCommands = new LinkedList<>();
         final Map<String, Node<View, Edge>> cloneNodeMapUUID = new HashMap<>();
 
         childrenTraverseProcessor.consume(getGraph(context), candidate, node -> {
@@ -180,5 +175,17 @@ public final class CloneNodeCommand extends AbstractGraphCompositeCommand {
     @Override
     public CommandResult<RuleViolation> undo(GraphCommandExecutionContext context) {
         return new SafeDeleteNodeCommand(clone).execute(context);
+    }
+
+    protected Node<View, Edge> getClone() {
+        return clone;
+    }
+
+    protected Node<Definition, Edge> getCandidate() {
+        return candidate;
+    }
+
+    protected List<Command<GraphCommandExecutionContext, RuleViolation>> getChildrenCommands() {
+        return childrenCommands;
     }
 }

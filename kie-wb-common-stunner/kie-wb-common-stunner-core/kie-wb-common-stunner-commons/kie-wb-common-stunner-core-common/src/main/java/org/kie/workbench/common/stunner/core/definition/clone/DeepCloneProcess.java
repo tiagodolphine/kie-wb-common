@@ -69,6 +69,10 @@ public class DeepCloneProcess extends AbstractCloneProcess {
     }
 
     private boolean isAllowedToClone(Object value) {
-        return (value instanceof String) || (classUtils.isPrimitiveClass(value.getClass()));
+        if(value == null){
+            System.out.print("null");
+        }
+        return Objects.nonNull(value) &&
+                ((value instanceof String) || (classUtils.isPrimitiveClass(value.getClass())));
     }
 }

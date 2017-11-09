@@ -141,17 +141,17 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
         }
     }
 
-    public Consumer<Node> cloneNodeCallback() {
+    private Consumer<Node> cloneNodeCallback() {
         return clone -> clonedElements.add(clone.getUUID());
     }
 
-    public void fireSelectedElementEvent() {
+    private void fireSelectedElementEvent() {
         clonedElements.stream().forEach(uuid -> elementSelectedEvent.fire(new CanvasElementSelectedEvent(getCanvasHandler(), uuid)));
     }
 
     private String getNewParentUUID(Node node) {
         //getting parent if selected
-        Optional<Element> selectedParent = getSelectedParentElement(node);
+        Optional<Element> selectedParent = getSelectedParentElement();
         if (selectedParent.isPresent() && !Objects.equals(selectedParent.get().getUUID(), node.getUUID()) && checkIfExistsOnCanvas(selectedParent.get().getUUID())) {
             return selectedParent.get().getUUID();
         }
@@ -174,7 +174,7 @@ public class PasteSelectionSessionCommand extends AbstractClientSessionCommand<C
         return getCanvasHandler().getDiagram().getMetadata().getCanvasRootUUID();
     }
 
-    private Optional<Element> getSelectedParentElement(Node node) {
+    private Optional<Element> getSelectedParentElement() {
         if (null != getSession().getSelectionControl()) {
             Collection<String> selectedItems = getSession().getSelectionControl().getSelectedItems();
             if (Objects.nonNull(selectedItems) && !selectedItems.isEmpty()) {

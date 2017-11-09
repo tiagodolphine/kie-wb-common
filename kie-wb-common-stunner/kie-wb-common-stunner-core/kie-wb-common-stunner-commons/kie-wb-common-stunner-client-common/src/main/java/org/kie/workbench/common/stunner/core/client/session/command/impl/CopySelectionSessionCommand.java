@@ -21,7 +21,6 @@ import java.util.logging.Logger;
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 
-import com.google.gwt.core.client.GWT;
 import org.kie.workbench.common.stunner.core.client.canvas.AbstractCanvasHandler;
 import org.kie.workbench.common.stunner.core.client.canvas.controls.clipboard.ClipboardControl;
 import org.kie.workbench.common.stunner.core.client.canvas.controls.select.SelectionControl;
@@ -85,13 +84,14 @@ public class CopySelectionSessionCommand extends AbstractClientSessionCommand<Cl
                 }
 
                 //for now just copy Nodes not Edges
-                clipboardControl.add(selectionControl.getSelectedItems().stream()
+                clipboardControl.set(selectionControl.getSelectedItems().stream()
                                              .map(this::getElement)
                                              .filter(element -> element instanceof Node)
                                              .toArray(Element[]::new));
 
                 callback.onSuccess();
             } catch (Exception e) {
+                LOGGER.severe(e.getMessage());
                 callback.onError((V) e);
             }
         }

@@ -82,4 +82,8 @@ public class CloneCanvasNodeCommand extends AddCanvasChildNodeCommand {
                                                             StreamSupport.stream(undoResult.getViolations().spliterator(), false))
                                                       .collect(Collectors.toList())).build();
     }
+
+    protected CompositeCommand<AbstractCanvasHandler, CanvasViolation> getCommands() {
+        return commands;
+    }
 }

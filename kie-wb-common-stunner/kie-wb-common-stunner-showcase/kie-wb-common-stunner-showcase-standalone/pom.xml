@@ -36,6 +36,7 @@
   </properties>
 
   <dependencies>
+
     <dependency>
       <groupId>org.jboss.xnio</groupId>
       <artifactId>xnio-api</artifactId>

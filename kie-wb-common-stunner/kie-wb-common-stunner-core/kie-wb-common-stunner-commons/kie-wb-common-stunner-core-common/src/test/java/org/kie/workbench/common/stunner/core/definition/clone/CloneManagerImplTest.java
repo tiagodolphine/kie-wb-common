@@ -14,23 +14,20 @@
  * limitations under the License.
  */
 
-package org.kie.workbench.common.stunner.core.client.canvas.controls.clipboard;
+package org.kie.workbench.common.stunner.core.definition.clone;
 
-import java.util.Collection;
+import org.junit.Test;
 
-import org.kie.workbench.common.stunner.core.graph.Element;
+import static org.junit.Assert.*;
 
-public interface ClipboardControl<E extends Element> {
+public class CloneManagerImplTest {
 
-    ClipboardControl<E> set(final E... item);
+    @Test
+    public void testClone() throws Exception {
+        //TODO
+    }
 
-    ClipboardControl<E> remove(final E... item);
-
-    Collection<E> getElements();
-
-    ClipboardControl<E> clear();
-
-    boolean hasElements();
-
-    String getParent(String uuid);
+    @Test
+    public void testClone1() throws Exception {
+    }
 }

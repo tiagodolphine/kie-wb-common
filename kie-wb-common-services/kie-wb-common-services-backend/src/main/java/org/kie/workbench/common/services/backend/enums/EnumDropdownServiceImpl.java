@@ -56,7 +56,6 @@ public class EnumDropdownServiceImpl implements EnumDropdownService {
     @Inject
     private MVELEvaluator mvelEvaluator;
 
-
     @Override
     public String[] loadDropDownExpression(final Path resource,
                                            final String[] valuePairs,

@@ -45,7 +45,7 @@ public class CopyToolbarCommand extends AbstractToolbarCommand<ClientFullSession
 
     @Override
     public String getTooltip() {
-        return "Copy";
+        return "Copy selection";
     }
 
     @Override

@@ -59,8 +59,8 @@ public final class CloneConnectorCommand extends AbstractGraphCompositeCommand {
     protected CloneConnectorCommand initialize(final GraphCommandExecutionContext context) {
         super.initialize(context);
 
-        this.sourceNode = (Node<? extends View<?>, Edge>) getNode(context, sourceNodeUUID).asNode();
-        this.targetNode = (Node<? extends View<?>, Edge>) getNode(context, targetNodeUUID).asNode();
+        this.sourceNode = (Node<? extends View<?>, Edge>) getNode(context, sourceNodeUUID);
+        this.targetNode = (Node<? extends View<?>, Edge>) getNode(context, targetNodeUUID);
 
         //clone candidate
         ViewConnector edgeContent = (ViewConnector) candidate.getContent();
@@ -94,5 +94,9 @@ public final class CloneConnectorCommand extends AbstractGraphCompositeCommand {
     @Override
     protected boolean delegateRulesContextToChildren() {
         return true;
+    }
+
+    protected Edge getCandidate() {
+        return candidate;
     }
 }

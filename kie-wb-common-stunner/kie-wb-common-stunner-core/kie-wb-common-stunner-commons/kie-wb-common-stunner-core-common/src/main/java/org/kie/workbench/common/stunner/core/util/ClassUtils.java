@@ -26,9 +26,18 @@ import javax.enterprise.context.ApplicationScoped;
 public class ClassUtils {
 
     private final Map<Class<?>, Class<?>> WRAPPER_MAP = new HashMap<>();
+    private boolean initialized;
+
+    public ClassUtils(){
+        init();
+    }
 
     @PostConstruct
     private void init() {
+        if(initialized){
+            return;
+        }
+
         WRAPPER_MAP.put(Boolean.class, Boolean.TYPE);
         WRAPPER_MAP.put(Byte.class, Byte.TYPE);
         WRAPPER_MAP.put(Character.class, Character.TYPE);
@@ -38,6 +47,7 @@ public class ClassUtils {
         WRAPPER_MAP.put(Double.class, Double.TYPE);
         WRAPPER_MAP.put(Float.class, Float.TYPE);
         WRAPPER_MAP.put(Void.class, Void.TYPE);
+        initialized = true;
     }
 
     public boolean isPrimitiveClass(Class<?> type) {

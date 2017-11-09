@@ -84,9 +84,4 @@ public class CloneNodeCommand extends AbstractCanvasGraphCommand {
             cloneNodeCommandCallback.ifPresent(callback -> callback.accept(clone));
         };
     }
-
-    @Override
-    public CommandResult<CanvasViolation> undo(AbstractCanvasHandler context) {
-        return super.undo(context);
-    }
 }

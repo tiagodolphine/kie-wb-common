@@ -47,7 +47,7 @@
 				<xsd:sequence>
 					<xsd:element name="waypoint" type="dc:Point" minOccurs="0" maxOccurs="unbounded">
 						<xsd:annotation>
-							<xsd:documentation>an optional list of points relative to the origin of the nesting diagram that specifies the connected line segments of the candidate</xsd:documentation>
+							<xsd:documentation>an optional list of points relative to the origin of the nesting diagram that specifies the connected line segments of the edge</xsd:documentation>
 						</xsd:annotation>
 					</xsd:element>
 				</xsd:sequence>

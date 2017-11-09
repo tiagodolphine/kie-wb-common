@@ -44,7 +44,7 @@ public class PasteToolbarCommand extends AbstractToolbarCommand<ClientFullSessio
 
     @Override
     public String getTooltip() {
-        return "Paste";
+        return "Paste selection";
     }
 
     @Override
