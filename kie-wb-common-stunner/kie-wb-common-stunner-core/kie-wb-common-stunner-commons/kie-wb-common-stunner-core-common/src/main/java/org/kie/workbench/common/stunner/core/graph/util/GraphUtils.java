@@ -175,7 +175,10 @@ public class GraphUtils {
 
     @SuppressWarnings("unchecked")
     public static Element<?> getParent(final Node<?, ? extends Edge> element) {
-        return element.getInEdges().stream()
+        return Optional.ofNullable(element)
+                .map(Node::getInEdges)
+                .orElse(Collections.emptyList())
+                .stream()
                 .filter(e -> e.getContent() instanceof Child)
                 .findAny()
                 .map(Edge::getSourceNode)

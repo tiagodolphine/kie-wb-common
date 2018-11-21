@@ -34,11 +34,6 @@ public abstract class AbstractParentsMatchHandler<T extends AbstractParentsMatch
         extends RuleExtensionHandler<T, C> {
 
     public static Class<?> getParentType(final RuleExtension rule, Element<? extends Definition> parent) {
-        return getParentType(rule, parent, null);
-    }
-
-    public static Class<?> getParentType(final RuleExtension rule, Element<? extends Definition> parent,
-                                         Class<?> defaultParentType) {
         final Class<?>[] typeArguments = rule.getTypeArguments();
         final Class parentDefinitionClass = Objects.nonNull(parent)
                 && Objects.nonNull(parent.getContent())
@@ -47,7 +42,7 @@ public abstract class AbstractParentsMatchHandler<T extends AbstractParentsMatch
         return Stream.of(typeArguments)
                 .filter(clazz -> Objects.equals(clazz, parentDefinitionClass))
                 .findFirst()
-                .orElse(defaultParentType);
+                .orElse(null);
     }
 
     public static boolean hasParentType(final RuleExtension rule) {

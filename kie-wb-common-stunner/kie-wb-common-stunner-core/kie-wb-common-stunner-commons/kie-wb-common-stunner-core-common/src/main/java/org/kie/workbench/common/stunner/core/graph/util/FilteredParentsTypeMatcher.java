@@ -29,6 +29,8 @@ import org.kie.workbench.common.stunner.core.graph.Node;
 import org.kie.workbench.common.stunner.core.graph.content.definition.Definition;
 import org.kie.workbench.common.stunner.core.graph.content.view.View;
 
+import static org.kie.soup.commons.validation.PortablePreconditions.checkNotNull;
+
 /**
  * A predicate that checks if two nodes are using sharing the same parent
  * for a given type of Definition. It also filters a given node and
@@ -60,6 +62,8 @@ public class FilteredParentsTypeMatcher
     @Override
     public boolean test(final Node<? extends View<?>, ? extends Edge> node,
                         final Node<? extends View<?>, ? extends Edge> node2) {
+        checkNotNull("node", node);
+        checkNotNull("node2", node2);
 
         //in case the nodes are not candidate
         if (!isCandidate.test(node) && !isCandidate.test(node2)) {

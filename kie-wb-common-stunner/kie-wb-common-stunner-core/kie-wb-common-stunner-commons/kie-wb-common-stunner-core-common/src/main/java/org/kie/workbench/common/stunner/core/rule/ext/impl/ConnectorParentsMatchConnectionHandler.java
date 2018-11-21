@@ -123,23 +123,11 @@ public class ConnectorParentsMatchConnectionHandler
             //source parent
             final Optional<? extends Element<? extends Definition>> sourceParent =
                     Optional.ofNullable((Element<? extends Definition>) GraphUtils.getParent(source));
-            final Optional<? extends Class<?>> sourceParentType =
-                    sourceParent
-                            .map(Element::getContent)
-                            .map(Definition::getDefinition)
-                            .map(Object::getClass);
-            final Class<?> parentTypeForSource = getParentType(rule, sourceParent.orElse(null),
-                                                               sourceParentType.orElse(null));
+            final Class<?> parentTypeForSource = getParentType(rule, sourceParent.orElse(null));
             //target parent
             final Optional<? extends Element<? extends Definition>> targetParent =
                     Optional.ofNullable((Element<? extends Definition>) GraphUtils.getParent(target));
-            final Optional<? extends Class<?>> targetParentType =
-                    targetParent
-                            .map(Element::getContent)
-                            .map(Definition::getDefinition)
-                            .map(Object::getClass);
-            final Class<?> parentTypeForTarget = getParentType(rule, targetParent.orElse(null),
-                                                               targetParentType.orElse(null));
+            final Class<?> parentTypeForTarget = getParentType(rule, targetParent.orElse(null));
 
             isValid = new ParentsTypeMatcher(definitionManager)
                     .forParentType(Objects.nonNull(parentTypeForSource) ? parentTypeForSource : parentTypeForTarget)
