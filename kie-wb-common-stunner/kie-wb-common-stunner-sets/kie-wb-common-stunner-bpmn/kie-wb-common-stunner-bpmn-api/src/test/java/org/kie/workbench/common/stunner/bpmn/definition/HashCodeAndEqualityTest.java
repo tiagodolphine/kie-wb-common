@@ -2382,16 +2382,6 @@ public class HashCodeAndEqualityTest {
                 .addFalseCase(new DirectionalAssociation(),
                               new DirectionalAssociation(null, null, null))
                 .test();
-
-        TestCaseBuilder.newTestCase()
-                .addTrueCase(new NonDirectionalAssociation(), new NonDirectionalAssociation())
-                .addTrueCase(new NonDirectionalAssociation(new BPMNGeneralSet(), new BackgroundSet(), new FontSet()),
-                             new NonDirectionalAssociation(new BPMNGeneralSet(), new BackgroundSet(), new FontSet()))
-                .addFalseCase(new NonDirectionalAssociation(),
-                              new NonDirectionalAssociation(new BPMNGeneralSet(), new BackgroundSet(), new FontSet()))
-                .addFalseCase(new NonDirectionalAssociation(),
-                              new NonDirectionalAssociation(null, null, null))
-                .test();
     }
 
     @Test
